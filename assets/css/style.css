@@ -1,0 +1,467 @@
+/* 색보정 포트폴리오 — 다크 고정.
+   밝은 배경은 옆에 놓인 이미지의 체감 채도와 콘트라스트를 왜곡한다.
+   그래서 라이트 모드 분기를 의도적으로 만들지 않는다.
+   UI에는 색을 쓰지 않는다 — 화면에서 색을 가진 것은 작업물과, 유일한
+   예외인 현재 탭 표시뿐이다. */
+
+:root {
+  /* 본문 면. 헤더·푸터도 같은 색이라 페이지가 하나의 면으로 읽힌다. */
+  --bg: #141416;
+  --surface: #141416;
+  /* 더 어두운 면. Contact 블록과 이미지가 실리기 전의 카드 바닥에 쓴다. */
+  --deep: #0b0b0c;
+  --line: #26262a;
+  --text: #ededed;
+  --muted: #8a8a8f;
+  --faint: #5c5c61;
+  /* 현재 탭에만 쓰는 검붉은색. UI에서 색을 가진 유일한 요소다.
+     헤더 면(#141416) 위에서 대비 3.96:1 로, 본문 크기 텍스트 권장치
+     4.5:1 에 못 미친다 — 본문이 밝아지면서 4.23:1 에서 더 떨어졌다.
+     권장치를 넘기려면 #d2555a(4.54:1)까지 밝혀야 해서 "검붉은"에서
+     멀어지므로, 요청한 색 계열을 지키는 쪽을 유지한다. 색만으로 상태를
+     알리지 않도록 aria-current를 함께 넣는다(render.py). */
+  --current: #c9484d;
+  /* 좌우 여백은 화면 폭과 무관하게 고정이다. 가운데 정렬(margin auto)로
+     폭을 묶지 않으므로 그리드가 창 전체를 쓴다. */
+  --gutter: 30px;
+  --gap: 30px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* 스크롤바를 항상 띄운다. 내용 길이에 따라 나타났다 사라지면 그때마다
+     가로 폭이 바뀌어 그리드가 다시 계산된다. */
+  overflow-y: scroll;
+  /* 네이티브 스크롤바·폼 요소가 이 팔레트에 맞는 어두운 쪽으로 그려진다.
+     이게 없으면 항상 보이는 스크롤바가 검은 화면에 흰 띠로 남는다. */
+  color-scheme: dark;
+}
+
+/* 푸터를 본문에 이어 붙이지 않고 화면 최하단으로 밀어낸다.
+   내용이 짧아도 푸터가 아래에 붙고, 길면 평소처럼 함께 흐른다
+   (position: fixed 로 띄우면 내용이 긴 페이지에서 본문을 덮는다). */
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+main { flex: 1 0 auto; }
+
+img, video, iframe { display: block; max-width: 100%; }
+
+a { color: inherit; text-decoration: none; }
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  left: var(--gutter);
+  top: 8px;
+  z-index: 10;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+/* 헤더 — 사이트 이름을 두지 않고 메뉴만 가운데 둔다.
+   홈으로 가는 길은 메뉴의 Works가 맡는다. */
+.masthead {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  /* 아래 여백 100px — 메뉴와 본문 사이 간격이다 */
+  padding: 28px var(--gutter) 100px;
+  /* 본문·푸터와 같은 면이다. 페이지 전체가 하나의 색으로 읽힌다. */
+  background: var(--surface);
+}
+
+/* 2.03125rem의 절반. 이 크기에서는 두 항목이 좁은 폰 화면에도 한 줄로
+   들어가므로 clamp가 필요 없다. */
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 32px;
+  font-size: 1.015625rem;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.nav a:hover { color: var(--text); }
+
+/* 현재 보고 있는 탭. 색만으로 상태를 알리지 않도록 마크업에
+   aria-current도 함께 넣는다(render.py). */
+.nav a.is-current,
+.nav a.is-current:hover { color: var(--current); }
+
+/* 목록 */
+.category {
+  padding: 0 var(--gutter) 64px;
+}
+
+/* 열 폭은 같고 높이는 작업물의 원본 비율대로 제각각이다.
+   align-items: start 라서 카드가 행 높이에 늘어나지 않고 제 높이를 지킨다.
+   이 상태로는 짧은 카드 아래에 여백이 남는다 — JS가 아래 .is-masonry로
+   그 틈을 없애고, JS가 없으면 이 모습이 폴백이다. */
+.grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 560px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+/* 열 수의 상한. 폭 상한이 없으므로 이 뒤로는 창이 넓어질수록
+   열 폭이 같이 커진다. */
+@media (min-width: 1200px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.card { display: block; }
+
+/* 메이슨리 — JS가 각 카드의 높이를 1px 행 span으로 바꿔 넣은 뒤에만 켜진다.
+   행 간격을 0으로 두고 span에 간격만큼을 더해 계산하므로, 카드는 자기
+   높이만 차지하고 그 아래 딱 간격만큼만 남는다. 그래서 열이 빈틈 없이
+   채워진다. 배치는 DOM 순서대로 진행되고 앞선 카드의 자리는 뒤에 오는
+   카드에 영향받지 않아서, 스크롤로 카드를 더 풀어도 이미 보고 있던
+   카드가 움직이지 않는다. */
+.js .grid.is-masonry {
+  grid-auto-rows: 1px;
+  row-gap: 0;
+}
+
+.card-frame {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  /* 본문과 같은 색이면 아직 안 실린 이미지 자리가 비어 보인다 */
+  background: var(--deep);
+}
+
+/* height:auto 와 img의 width/height 속성이 짝을 이뤄, 이미지가 늦게
+   실려도 브라우저가 미리 자리를 잡아 스크롤 중 레이아웃이 튀지 않는다. */
+.card-frame img {
+  width: 100%;
+  height: auto;
+  filter: brightness(.92);
+  transition: filter .25s ease, transform .4s ease;
+}
+
+/* 배지는 우상단에 둔다. 제목이 프레임을 덮는 구조라
+   좌하단에 두면 터치 기기에서 제목과 겹친다. */
+.badge {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  padding: 3px 7px;
+  font-size: .625rem;
+  letter-spacing: .12em;
+  background: rgba(0, 0, 0, .6);
+  border: 1px solid rgba(255, 255, 255, .25);
+}
+
+/* 제목은 썸네일을 덮는다. opacity로 숨기는 이유는 display:none 이면
+   스크린리더에서도 사라지기 때문이다 — 눈에만 안 보여야 한다. */
+.card-title {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: .9375rem;
+  line-height: 1.4;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
+/* 호버가 되는 기기에서만 숨긴다. 폰에는 호버가 없어서
+   이 분기 밖에 두면 제목을 볼 방법이 아예 없어진다. */
+@media (hover: hover) {
+  .card:hover .card-frame img {
+    filter: brightness(.34);
+    transform: scale(1.015);
+  }
+  .card:hover .card-title { opacity: 1; }
+}
+
+/* 키보드 이동은 호버 여부와 무관하게 제목을 보여준다. */
+.card:focus-visible .card-frame img {
+  filter: brightness(.34);
+  transform: scale(1.015);
+}
+.card:focus-visible .card-title { opacity: 1; }
+
+/* 터치 기기: 제목을 항상 보여주되 이미지 전체를 어둡게 하지 않는다.
+   색 보정 결과가 상품이므로 아래쪽 그라데이션만 깐다. */
+@media (hover: none) {
+  .card-title {
+    opacity: 1;
+    align-items: flex-end;
+    justify-content: flex-start;
+    text-align: left;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, .74) 0%,
+      rgba(0, 0, 0, .32) 45%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+}
+
+/* JS가 없으면 전부 보여준다. 있으면 초과분을 숨긴다. */
+.js .card.extra { display: none; }
+/* 스크롤이 내려오면서 한 묶음씩 풀린다 */
+.js .card.extra.shown { display: block; }
+/* IntersectionObserver가 없는 브라우저에서 버튼이 전부 한 번에 푸는 길 */
+.js .category.is-open .card.extra { display: block; }
+
+.more {
+  margin-top: 20px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: .75rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.more:hover { color: var(--text); border-color: var(--faint); }
+.category.is-open .more { display: none; }
+
+.empty {
+  padding: 80px var(--gutter);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 게시물 — 제목 띠는 창을 가로지르고, 본문만 폭을 묶어 가운데 둔다.
+   갤러리 이미지를 가로 1600px로 만들기 때문에, 본문까지 창 전체로 늘리면
+   넓은 모니터에서 이미지가 확대되어 부드러워진다. */
+.post { padding: 0; }
+
+.post-main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 80px;
+}
+
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 80px;
+}
+
+.player {
+  aspect-ratio: 16 / 9;
+  background: #000;
+  margin-bottom: 36px;
+}
+.player iframe, .player video { width: 100%; height: 100%; border: 0; }
+
+.player-link { margin: 0 0 36px; color: var(--muted); }
+.player-link a { border-bottom: 1px solid var(--line); }
+
+/* 제목 띠 — Contact와 같은 처리다. 어두운 면 위에 제목만 가운데 둔다.
+   카테고리와 날짜는 화면에서 빼기로 했다. */
+.post-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  margin-bottom: 64px;
+  /* 좌우는 화살표(44px) + 여유만큼 비워둔다. 그렇지 않으면 긴 제목이
+     가운데 정렬된 채 화살표 아래로 깔린다. */
+  padding: 56px calc(var(--gutter) + 56px);
+  background: var(--deep);
+  text-align: center;
+}
+
+.post-title {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+
+.gallery { display: grid; gap: 16px; }
+.shot { margin: 0; }
+.shot img { width: 100%; height: auto; cursor: zoom-in; }
+
+.post-body {
+  max-width: 34rem;
+  margin: 48px 0 0;
+  color: var(--muted);
+}
+.post-body p { margin: 0 0 1.2em; }
+
+/* 이전·다음 화살표 — 제목 띠 안의 좌우 끝에 둔다. 띠와 함께 스크롤되어
+   올라가므로, 갤러리를 다 본 뒤에는 아래쪽 작업물 그리드로 넘어간다. */
+.post-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 64px;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.post-arrow:hover { color: var(--text); border-color: var(--faint); }
+.post-arrow-prev { left: var(--gutter); }
+.post-arrow-next { right: var(--gutter); }
+
+.page-title {
+  margin: 0 0 24px;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  letter-spacing: -.02em;
+}
+.page p { max-width: 34rem; color: var(--muted); }
+
+/* Contact — 어두운 면 위에 250px 높이로 앉고, 여기에는 제목만 있다.
+   가로·세로 모두 가운데 정렬이다. */
+.page-contact {
+  /* 폭을 묶지 않아 어두운 면이 창 전체를 가로지른다 */
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 250px;
+  padding: 56px var(--gutter);
+  background: var(--deep);
+}
+.page-contact .page-title { margin: 0; }
+
+/* 본문과 연락처는 어두운 블록 다음 섹션에 온다 */
+.contact-body {
+  padding: 64px var(--gutter) 80px;
+  text-align: center;
+}
+/* 읽기 폭은 묶되 가운데 정렬을 유지하려면 좌우 margin이 auto여야 한다 */
+.contact-body p {
+  max-width: 34rem;
+  margin: 0 auto 1.2em;
+  color: var(--muted);
+}
+.contact-body p:last-child { margin-bottom: 0; }
+
+/* .contact-body p 가 margin을 통째로 잡으므로 여기서 위쪽만 다시 준다 */
+.contact-body .page-contact-links { margin-top: 28px; }
+.page-contact-links { font-size: .9375rem; }
+.page-contact-links a { border-bottom: 1px solid var(--line); }
+.page-contact-links a:hover { color: var(--text); border-color: var(--faint); }
+
+/* 푸터 — 내용 없는 50px 띠다. 본문보다 어두운 면이라 페이지 아래를 닫는다.
+   body가 flex column이고 main이 남는 높이를 먹으므로 내용이 짧아도
+   여기가 화면 최하단에 붙는다. */
+.footer {
+  flex-shrink: 0;
+  height: 50px;
+  background: var(--deep);
+}
+
+/* 맨 위로 — 좌측 하단 고정.
+   JS가 없으면 계속 보이고 앵커로 그대로 동작한다. JS가 있으면
+   조금 내려간 뒤부터 보이게 해서 화면 맨 위에서는 비켜준다. */
+.to-top {
+  position: fixed;
+  left: var(--gutter);
+  bottom: var(--gutter);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--muted);
+  background: rgba(11, 11, 12, .82);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+.to-top:hover { color: var(--text); border-color: var(--faint); }
+
+.js .to-top {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.js .to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 라이트박스가 열려 있으면 그 위로 뜨지 않게 비운다 */
+body.lb-open .to-top { display: none; }
+
+/* 라이트박스 — JS가 만든다 */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .94);
+}
+.lightbox img {
+  max-width: 96vw;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  cursor: zoom-out;
+}
+.lightbox button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 14px 16px;
+  font: inherit;
+  color: var(--text);
+  background: rgba(0, 0, 0, .5);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.lightbox .lb-prev { left: 12px; }
+.lightbox .lb-next { right: 12px; }
+.lightbox .lb-close { top: 12px; right: 12px; transform: none; }
+body.lb-open { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

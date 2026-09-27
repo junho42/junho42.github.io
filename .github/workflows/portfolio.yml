@@ -1,0 +1,67 @@
+name: Portfolio build
+
+# 트리거 경로에 생성물(works/, media/, works.json, 루트 html)이 없으므로
+# 이 워크플로가 만든 커밋으로 자신이 다시 돌지 않는다.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'upload/**'
+      - 'templates/**'
+      - 'assets/**'
+      - 'site.config.json'
+      - 'tools/**'
+      - '.github/workflows/portfolio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: portfolio-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 게시물 정렬이 폴더 추가 커밋 시각을 읽으므로 전체 이력이 필요하다
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install --quiet "pillow==12.*" "pytest==9.*"
+
+      - name: 테스트
+        run: python -m pytest tools/tests -q
+
+      - name: 빌드
+        run: python tools/build.py
+
+      - name: 결과 커밋
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for path in works media works.json \
+                      index.html contact.html; do
+            if [ -e "$path" ]; then
+              git add -- "$path"
+            fi
+          done
+          if git diff --cached --quiet; then
+            echo "변경 없음"
+            exit 0
+          fi
+          git commit -m "chore(portfolio): 작업물 목록 자동 갱신"
+          # 같은 시간대에 올린 다른 업로드가 먼저 커밋을 밀어넣었을 수 있으므로,
+          # 푸시 전에 최신 main 위로 다시 얹는다. 산출물은 upload/ 의 순수
+          # 함수이므로 리베이스해도 안전하다. 그래도 충돌해 푸시가 실패하면
+          # 워크플로를 실패로 남겨 작가가 알아챌 수 있게 한다.
+          git fetch origin main
+          git rebase origin/main
+          git push
