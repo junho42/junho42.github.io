@@ -17,7 +17,7 @@ from images import (
     needs_rebuild,
 )
 from naming import natural_key
-from scanner import Category, Work
+from scanner import Work
 
 # media_root 의 부모를 기준으로 상대경로를 만든다. 이 값이 사이트 루트다.
 COVER_FILENAME = f"cover-{COVER_WIDTH}.webp"
@@ -47,12 +47,11 @@ def _relative(site_root: Path, path: Path) -> str:
 
 def _build_work(
     work: Work,
-    category: Category,
     media_root: Path,
     site_root: Path,
 ) -> tuple[dict, list[str]]:
     warnings: list[str] = []
-    out_dir = media_root / category.slug / work.slug
+    out_dir = media_root / work.slug
 
     cover_entry = None
     if work.cover is not None:
@@ -64,7 +63,7 @@ def _build_work(
                 size = image_size(cover_dest)
             cover_entry = {"src": _relative(site_root, cover_dest), "w": size[0], "h": size[1]}
         except OSError:
-            warnings.append(f"{category.title}/{work.title}/{work.cover.name}: 이미지를 열 수 없어 커버에서 제외했습니다")
+            warnings.append(f"{work.title}/{work.cover.name}: 이미지를 열 수 없어 커버에서 제외했습니다")
     elif work.video and work.video.get("kind") == "youtube":
         cover_dest = out_dir / COVER_FILENAME
         # 이미 받아둔 썸네일이 있으면 다시 내려받지 않는다. 무조건 다시 받으면
@@ -73,14 +72,14 @@ def _build_work(
         # 커버가 목록에서 사라진다.
         fetched = cover_dest.exists() or fetch_youtube_cover(work.video["id"], cover_dest)
         if not fetched:
-            warnings.append(f"{category.title}/{work.title}: 유튜브 썸네일을 받지 못했습니다")
+            warnings.append(f"{work.title}: 유튜브 썸네일을 받지 못했습니다")
         else:
             try:
                 # 다른 모든 미디어 경로처럼 실제 파일에서 크기를 읽는다.
                 # 16:9를 다시 계산하지 않는다 — 실제 저장된 크기와 다를 수 있다.
                 size = image_size(cover_dest)
             except OSError:
-                warnings.append(f"{category.title}/{work.title}: 유튜브 썸네일을 읽을 수 없습니다")
+                warnings.append(f"{work.title}: 유튜브 썸네일을 읽을 수 없습니다")
             else:
                 cover_entry = {"src": _relative(site_root, cover_dest), "w": size[0], "h": size[1]}
 
@@ -93,7 +92,7 @@ def _build_work(
             else:
                 size = image_size(dest)
         except OSError:
-            warnings.append(f"{category.title}/{work.title}/{source.name}: 이미지를 열 수 없어 건너뜁니다")
+            warnings.append(f"{work.title}/{source.name}: 이미지를 열 수 없어 건너뜁니다")
             continue
         image_entries.append({"src": _relative(site_root, dest), "w": size[0], "h": size[1]})
 
@@ -112,13 +111,13 @@ def _build_work(
                 shutil.copy2(source, dest)
             video_entry = {**work.video, "url": _relative(site_root, dest)}
         except OSError:
-            warnings.append(f"{category.title}/{work.title}/{source.name}: 영상을 복사하지 못해 재생에서 제외했습니다")
+            warnings.append(f"{work.title}/{source.name}: 영상을 복사하지 못해 재생에서 제외했습니다")
             video_entry = None
 
     entry = {
         "title": work.title,
         "slug": work.slug,
-        "url": f"works/{category.slug}/{work.slug}/",
+        "url": f"works/{work.slug}/",
         "date": work.date.isoformat() if work.date else None,
         "order": work.order,
         "cover": cover_entry,
@@ -130,33 +129,27 @@ def _build_work(
 
 
 def build_manifest(
-    categories: list[Category],
+    works: list[Work],
     media_root: Path,
     generated_at: datetime,
 ) -> tuple[dict, list[str]]:
-    """이미지 변환까지 수행하고 (manifest, 경고)를 돌려준다."""
+    """이미지 변환까지 수행하고 (manifest, 경고)를 돌려준다.
+
+    카테고리 단계가 없으므로 게시물이 한 줄로 들어간다. 정렬은 여기서 한다 —
+    날짜가 이 시점에 채워져 있기 때문이다.
+    """
     site_root = media_root.parent
     warnings: list[str] = []
-    category_entries = []
+    entries = []
 
-    for category in categories:
-        work_entries = []
-        for work in sort_works(category.works):
-            entry, work_warnings = _build_work(work, category, media_root, site_root)
-            warnings.extend(work_warnings)
-            work_entries.append(entry)
-        category_entries.append(
-            {
-                "title": category.title,
-                "slug": category.slug,
-                "order": category.order,
-                "works": work_entries,
-            }
-        )
+    for work in sort_works(works):
+        entry, work_warnings = _build_work(work, media_root, site_root)
+        warnings.extend(work_warnings)
+        entries.append(entry)
 
     return {
         "generatedAt": generated_at.isoformat(),
-        "categories": category_entries,
+        "works": entries,
     }, warnings
 
 

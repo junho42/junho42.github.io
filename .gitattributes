@@ -1,0 +1,40 @@
+# Git LFS — 작가가 올리는 "원본"만 LFS로 보낸다.
+#
+# media/ 는 절대 넣지 않는다. GitHub Pages는 LFS 파일을 서빙하지 않고 LFS
+# 포인터(작은 텍스트 파일)를 그대로 내려보내므로, 사이트가 참조하는 이미지를
+# LFS에 넣으면 모든 이미지가 깨진다. media/ 는 리사이즈된 사본이라 용량이
+# 작고(원본 대비 수십 분의 일), 그대로 두는 편이 안전하다.
+#
+# 용량의 대부분은 upload/ 의 원본이고 그 파일들은 웹에 서빙되지 않으므로
+# (아래 _config.yml 의 exclude) LFS로 보내도 사이트에 영향이 없다.
+#
+# 워크플로의 checkout 은 lfs: true 여야 한다 — 그러지 않으면 러너가 포인터만
+# 받아 Pillow가 이미지를 열 수 없다.
+
+upload/**/*.jpg   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.jpeg  filter=lfs diff=lfs merge=lfs -text
+upload/**/*.JPG   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.JPEG  filter=lfs diff=lfs merge=lfs -text
+upload/**/*.png   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.PNG   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.webp  filter=lfs diff=lfs merge=lfs -text
+upload/**/*.avif  filter=lfs diff=lfs merge=lfs -text
+upload/**/*.tif   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.tiff  filter=lfs diff=lfs merge=lfs -text
+
+upload/**/*.mp4   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.MP4   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.webm  filter=lfs diff=lfs merge=lfs -text
+upload/**/*.mov   filter=lfs diff=lfs merge=lfs -text
+upload/**/*.MOV   filter=lfs diff=lfs merge=lfs -text
+
+# 텍스트는 줄바꿈을 LF로 고정한다. 윈도우에서 올린 파일과 러너가 만든 파일이
+# 줄바꿈만 달라 매번 "변경됨"으로 잡히는 것을 막는다.
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.py   text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.txt  text eol=lf

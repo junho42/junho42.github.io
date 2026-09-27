@@ -30,6 +30,9 @@ jobs:
         with:
           # 게시물 정렬이 폴더 추가 커밋 시각을 읽으므로 전체 이력이 필요하다
           fetch-depth: 0
+          # 원본 이미지는 Git LFS에 있다. 이것이 없으면 러너가 실제 파일이
+          # 아니라 LFS 포인터(텍스트)만 받아서 Pillow가 이미지를 열지 못한다.
+          lfs: true
 
       - uses: actions/setup-python@v5
         with:

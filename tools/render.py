@@ -173,16 +173,6 @@ def _page(
     )
 
 
-def _flatten(manifest: dict) -> list[dict]:
-    """카테고리를 무너뜨려 게시물을 한 줄로 만든다.
-
-    카테고리는 폴더 규칙(작가가 업로드를 정리하는 단위)이자 게시물 주소의
-    일부로만 남고, 화면에서는 구분되지 않는다. 순서는 카테고리 순서 안에서
-    게시물 순서를 그대로 이어붙인 것이다.
-    """
-    return [work for category in manifest["categories"] for work in category["works"]]
-
-
 def _grid_html(works: list[dict], rel: str, page_size: int, templates_dir: Path) -> str:
     """작업물 카드 그리드. 목록 페이지와 게시물 페이지 아래쪽이 같이 쓴다.
 
@@ -228,7 +218,7 @@ def _grid_html(works: list[dict], rel: str, page_size: int, templates_dir: Path)
 
 def _render_index(manifest: dict, config: dict, site_root: Path, templates_dir: Path) -> Path:
     page_size = int(config.get("gridPageSize") or 8)
-    content = _grid_html(_flatten(manifest), "", page_size, templates_dir)
+    content = _grid_html(manifest["works"], "", page_size, templates_dir)
 
     meta = _meta_block(
         config,
@@ -281,14 +271,13 @@ def _render_contact(config: dict, site_root: Path, templates_dir: Path) -> Path:
 
 def _render_post(
     work: dict,
-    category: dict,
     neighbours: tuple[dict | None, dict | None],
     all_works: list[dict],
     config: dict,
     site_root: Path,
     templates_dir: Path,
 ) -> Path:
-    depth = 3  # works/<카테고리>/<게시물>/
+    depth = 2  # works/<게시물>/
     rel = relative_prefix(depth)
     figure_template = _load(templates_dir, "partials/figure.html")
     cover = _cover_or_placeholder(work)
@@ -344,7 +333,7 @@ def _render_post(
     meta = _meta_block(
         config,
         f"{work['title']} — {config.get('siteName','')}",
-        f"{category['title']} · {config.get('siteName','')}",
+        config.get("siteName", ""),
         _absolute(config, _url_path(cover.get("src", ""))),
     )
     html = _page(
@@ -357,7 +346,7 @@ def _render_post(
         # 게시물은 Works에 속하므로 그 탭을 켠 상태로 둔다
         current="index.html",
     )
-    return _write(site_root / "works" / category["slug"] / work["slug"] / "index.html", html)
+    return _write(site_root / "works" / work["slug"] / "index.html", html)
 
 
 def render_site(
@@ -376,22 +365,16 @@ def render_site(
     # 화살표 순서는 목록 그리드의 순서와 같아야 한다. 카테고리는 화면에
     # 드러나지 않으므로 카테고리 안에서만 이웃을 찾으면 그리드에서 나란히
     # 있던 작업물이 서로 이웃이 아니게 된다.
-    pairs = [
-        (category, work)
-        for category in manifest["categories"]
-        for work in category["works"]
-    ]
-    all_works = [work for _, work in pairs]
+    all_works = manifest["works"]
 
-    for index, (category, work) in enumerate(pairs):
+    for index, work in enumerate(all_works):
         previous_work = all_works[index - 1] if index > 0 else None
         next_work = all_works[index + 1] if index + 1 < len(all_works) else None
         if work.get("cover") is None:
-            warnings.append(f"{category['title']}/{work['title']}: 커버 이미지가 없습니다")
+            warnings.append(f"{work['title']}: 커버 이미지가 없습니다")
         pages.append(
             _render_post(
                 work,
-                category,
                 (previous_work, next_work),
                 all_works,
                 config,

@@ -95,14 +95,13 @@ def build(site_root: Path, repo_root: Path) -> tuple[int, list[str]]:
     except json.JSONDecodeError as exc:
         return 1, [f"site.config.json의 {exc.lineno}번째 줄에 문법 오류가 있습니다: {exc.msg}"]
 
-    categories, warnings = scan(site_root / "upload")
+    works, warnings = scan(site_root / "upload")
 
-    for category in categories:
-        for work in category.works:
-            work.date = git_added_at(repo_root, work.directory)
+    for work in works:
+        work.date = git_added_at(repo_root, work.directory)
 
     manifest, media_warnings = build_manifest(
-        categories,
+        works,
         site_root / "media",
         datetime.now(timezone.utc).astimezone(),
     )
@@ -115,8 +114,7 @@ def build(site_root: Path, repo_root: Path) -> tuple[int, list[str]]:
     warnings.extend(render_warnings)
 
     errors = check_links(site_root, pages)
-    work_count = sum(len(category["works"]) for category in manifest["categories"])
-    messages = [f"카테고리 {len(manifest['categories'])}개, 게시물 {work_count}개, 페이지 {len(pages)}개 생성"]
+    messages = [f"게시물 {len(manifest['works'])}개, 페이지 {len(pages)}개 생성"]
     return (1 if errors else 0), messages + warnings + errors
 
 

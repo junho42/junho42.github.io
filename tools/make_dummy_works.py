@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 UPLOAD = Path(__file__).resolve().parents[1] / "upload"
-CATEGORY = "99_그리드확인"
+PREFIX = "99_그리드확인"
 
 # 세로 / 가로 / 정방형 / 파노라마 / 살짝 다른 것들이 섞이게 한다.
 RATIOS = [
@@ -61,12 +61,11 @@ def _swatch(width: int, height: int, seed: int) -> Image.Image:
 
 
 def generate(count: int = 100) -> None:
-    root = UPLOAD / CATEGORY
-    root.mkdir(parents=True, exist_ok=True)
+    UPLOAD.mkdir(parents=True, exist_ok=True)
     for index in range(1, count + 1):
         width, height = RATIOS[index % len(RATIOS)]
         title = f"{TITLES[index % len(TITLES)]} {index:03d}"
-        folder = root / title
+        folder = UPLOAD / f"{PREFIX} {title}"
         folder.mkdir(exist_ok=True)
         _swatch(width, height, index).save(folder / "cover.jpg", quality=80)
         # 게시물 페이지도 볼 수 있게 갤러리 이미지를 한두 장 넣는다
@@ -78,16 +77,15 @@ def generate(count: int = 100) -> None:
         (folder / "memo.txt").write_text(
             f"{title} 더미 본문입니다.\n\n원본 {width}x{height}.", encoding="utf-8"
         )
-    print(f"generated {count} works under upload/{CATEGORY}")
+    print(f"generated {count} works under upload/ (prefix: {PREFIX})")
 
 
 def clean() -> None:
-    root = UPLOAD / CATEGORY
-    if root.exists():
-        shutil.rmtree(root)
-        print(f"removed upload/{CATEGORY}")
-    else:
-        print("nothing to remove")
+    removed = 0
+    for folder in sorted(UPLOAD.glob(f"{PREFIX}*")):
+        shutil.rmtree(folder)
+        removed += 1
+    print(f"removed {removed} dummy works" if removed else "nothing to remove")
 
 
 if __name__ == "__main__":
