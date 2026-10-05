@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from naming import dedupe_slug, natural_key, strip_order_prefix
-from textfile import body_to_html, read_text
+from textfile import body_to_html, join_paragraphs, read_text
 from video import parse_video_url
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
@@ -28,6 +28,8 @@ COVER_STEM = "cover"
 # Info.json에서 읽는 항목. 비어 있거나 없는 항목은 예전 방식으로 대체한다 —
 # 제목은 폴더 이름, 링크는 link.txt, 설명은 .txt 파일.
 INFO_FIELDS = ("title", "genre", "description", "link")
+# 단락 목록(["첫 단락", "둘째 단락"])으로도 적을 수 있는 항목
+INFO_PARAGRAPH_FIELDS = ("description",)
 
 
 @dataclass
@@ -88,7 +90,14 @@ def _read_info(directory: Path, info_file: Path) -> tuple[dict[str, str], list[s
         value = data.get(key)
         if value is None:
             continue
-        if not isinstance(value, str):
+        if key in INFO_PARAGRAPH_FIELDS:
+            value = join_paragraphs(value)
+            if value is None:
+                warnings.append(
+                    f"{label}: {key} 값은 글자 또는 [\"단락\", \"단락\"] 목록이어야 해서 무시합니다"
+                )
+                continue
+        elif not isinstance(value, str):
             warnings.append(f"{label}: {key} 값은 따옴표로 감싼 글자여야 해서 무시합니다")
             continue
         info[key] = value.strip()

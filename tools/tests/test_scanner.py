@@ -309,3 +309,25 @@ def test_Info_json의_영상이_아닌_주소는_link_txt처럼_일반_링크가
 
     assert works[0].video == {"kind": "link", "id": None, "embed": None, "url": "https://example.com/page"}
     assert warnings == []
+
+
+def test_Info_json의_description은_단락_목록으로_적을_수_있다(tmp_path):
+    # 디자이너가 \n 없이 고칠 수 있도록 단락마다 한 줄씩 적는다
+    _make(tmp_path, "작업/01.jpg")
+    _info(tmp_path, "작업", {"description": ["첫 단락", "둘째 단락"]})
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].body == "<p>첫 단락</p>\n<p>둘째 단락</p>"
+    assert warnings == []
+
+
+def test_Info_json의_단락_목록에_글자가_아닌_값이_있으면_경고하고_무시한다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _make(tmp_path, "작업/memo.txt", "메모 본문".encode("utf-8"))
+    _info(tmp_path, "작업", {"description": ["첫 단락", 3]})
+
+    works, warnings = scan(tmp_path)
+
+    assert "메모 본문" in works[0].body
+    assert any("description" in w for w in warnings)

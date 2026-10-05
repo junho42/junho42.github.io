@@ -67,3 +67,12 @@ def test_CRLF를_정규화한다():
 
 def test_빈_본문은_빈_문자열():
     assert body_to_html("   \n\n  ") == ""
+
+
+def test_단락_목록은_빈_줄로_이어_붙인다():
+    from textfile import join_paragraphs
+
+    assert join_paragraphs(["첫 단락", "  둘째 단락 ", ""]) == "첫 단락\n\n둘째 단락"
+    assert join_paragraphs("문자열 그대로") == "문자열 그대로"
+    assert join_paragraphs(["글자", 3]) is None
+    assert join_paragraphs(3) is None

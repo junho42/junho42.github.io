@@ -39,3 +39,17 @@ def body_to_html(text: str) -> str:
         if lines:
             paragraphs.append("<p>" + "<br>\n".join(lines) + "</p>")
     return "\n".join(paragraphs)
+
+
+def join_paragraphs(value) -> str | None:
+    """JSON의 긴 글 값을 body_to_html()이 읽는 텍스트로 바꾼다.
+
+    디자이너가 \n 이스케이프 없이 고칠 수 있도록 ["첫 단락", "둘째 단락"]처럼
+    단락마다 한 줄씩 적는 목록을 받는다. 예전처럼 문자열 하나도 그대로 받는다.
+    목록에 글자가 아닌 값이 섞였거나 형식이 다르면 None — 호출부가 경고한다.
+    """
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+        return "\n\n".join(item.strip() for item in value if item.strip())
+    return None

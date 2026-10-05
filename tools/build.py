@@ -36,6 +36,7 @@ from images import SYMBOL_WIDTH, image_size, make_symbol, needs_rebuild  # noqa:
 from manifest import build_manifest, write_manifest  # noqa: E402
 from render import render_site  # noqa: E402
 from scanner import scan  # noqa: E402
+from textfile import join_paragraphs  # noqa: E402
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -49,6 +50,8 @@ DEFINE_FIELDS = (
     "title", "email", "instagram", "name", "phone", "address",
     "contact-title", "contact-content",
 )
+# 단락 목록(["첫 단락", "둘째 단락"])으로도 적을 수 있는 항목
+DEFINE_PARAGRAPH_FIELDS = ("contact-content",)
 # define.json의 이름 → 렌더러가 읽는 설정 이름. 나머지는 이름이 같다.
 DEFINE_RENAMES = {"contact-title": "contactTitle", "contact-content": "contactNote"}
 
@@ -71,7 +74,14 @@ def _load_define(site_root: Path) -> tuple[dict, list[str]]:
         value = data.get(key)
         if value is None:
             continue
-        if not isinstance(value, str):
+        if key in DEFINE_PARAGRAPH_FIELDS:
+            value = join_paragraphs(value)
+            if value is None:
+                warnings.append(
+                    f"define.json: {key} 값은 글자 또는 [\"단락\", \"단락\"] 목록이어야 해서 무시합니다"
+                )
+                continue
+        elif not isinstance(value, str):
             warnings.append(f"define.json: {key} 값은 따옴표로 감싼 글자여야 해서 무시합니다")
             continue
         values[key] = value.strip()

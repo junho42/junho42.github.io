@@ -280,3 +280,14 @@ def test_define_json의_contact_title과_contact_content가_Contact에_들어간
     contact = (site / "contact.html").read_text(encoding="utf-8")
     assert '<h2 class="contact-title">다짐 한 줄</h2>' in contact
     assert "<p>첫 단락</p>\n<p>둘째 단락</p>" in contact
+
+
+def test_define_json의_contact_content는_단락_목록으로_적을_수_있다(tmp_path):
+    site = _sample_site(tmp_path)
+    _define(site, json.dumps({"contact-content": ["첫 단락", "둘째 단락"]}, ensure_ascii=False))
+
+    result = _run(site)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    contact = (site / "contact.html").read_text(encoding="utf-8")
+    assert "<p>첫 단락</p>\n<p>둘째 단락</p>" in contact
