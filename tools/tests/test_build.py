@@ -246,9 +246,9 @@ def test_심볼_원본이_있으면_웹용_사본을_만들어_Contact에_넣는
     result = _run(site)
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert (site / "media" / "_site" / "faran_symbol-880.webp").exists()
+    assert (site / "media" / "site" / "faran_symbol-880.webp").exists()
     contact = (site / "contact.html").read_text(encoding="utf-8")
-    assert 'src="media/_site/faran_symbol-880.webp"' in contact
+    assert 'src="media/site/faran_symbol-880.webp"' in contact
     assert 'width="880" height="440"' in contact
 
 
@@ -291,3 +291,11 @@ def test_define_json의_contact_content는_단락_목록으로_적을_수_있다
     assert result.returncode == 0, result.stdout + result.stderr
     contact = (site / "contact.html").read_text(encoding="utf-8")
     assert "<p>첫 단락</p>\n<p>둘째 단락</p>" in contact
+
+
+def test_빌드가_만드는_사이트_파일은_밑줄로_시작하는_경로에_두지_않는다(tmp_path):
+    # GitHub Pages(Jekyll)는 _로 시작하는 폴더·파일을 배포에서 뺀다.
+    # 로컬 서버에서는 보이는데 실제 사이트에서만 404가 나는 원인이었다.
+    from build import SYMBOL_DEST
+
+    assert not any(part.startswith("_") for part in SYMBOL_DEST.parts)

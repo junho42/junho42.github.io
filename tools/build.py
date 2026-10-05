@@ -89,11 +89,12 @@ def _load_define(site_root: Path) -> tuple[dict, list[str]]:
 
 
 # Contact 왼쪽 심볼의 원본. 이 파일만 바꿔 넣으면 다음 빌드에서 웹용
-# 사본이 다시 만들어진다. 사본은 media/_site/ 에 둔다 — media/ 는 워크플로가
-# 커밋하는 산출물 폴더이고, "_"로 시작하는 이름은 작업물 폴더가 쓸 수 없어
-# (scanner._visible) 게시물 주소와 겹치지 않는다.
+# 사본이 다시 만들어진다. 사본은 media/site/ 에 둔다 — media/ 는 워크플로가
+# 커밋하는 산출물 폴더이고, "site"는 예약된 주소라 작업물 폴더와 겹치지 않는다
+# (scanner.RESERVED_SLUGS). "_"로 시작하는 이름은 쓰면 안 된다 — GitHub Pages의
+# Jekyll이 배포에서 빼서, 로컬에서는 보이는데 실제 사이트에서만 404가 난다.
 SYMBOL_SOURCE = Path("assets") / "img" / "faran_symbol.png"
-SYMBOL_DEST = Path("media") / "_site" / f"faran_symbol-{SYMBOL_WIDTH}.webp"
+SYMBOL_DEST = Path("media") / "site" / f"faran_symbol-{SYMBOL_WIDTH}.webp"
 
 
 def _build_symbol(site_root: Path) -> tuple[dict | None, list[str]]:

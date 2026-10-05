@@ -331,3 +331,13 @@ def test_Info_json의_단락_목록에_글자가_아닌_값이_있으면_경고�
 
     assert "메모 본문" in works[0].body
     assert any("description" in w for w in warnings)
+
+
+def test_site는_예약된_주소라_작업물_폴더가_쓰면_번호가_붙는다(tmp_path):
+    # media/site/ 에는 빌드가 만든 사이트 공용 이미지(심볼)가 들어간다.
+    _make(tmp_path, "site/01.jpg")
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].slug == "site-2"
+    assert any("site-2" in w for w in warnings)

@@ -24,6 +24,9 @@ VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov"}
 LINK_FILENAME = "link.txt"
 INFO_FILENAME = "info.json"
 COVER_STEM = "cover"
+# media/ 아래에서 작업물이 아닌 용도로 쓰는 주소. media/site/ 에는 빌드가 만든
+# 사이트 공용 이미지(심볼)가 들어간다. 작업물 폴더 이름이 겹치면 번호를 붙인다.
+RESERVED_SLUGS = frozenset({"site"})
 
 # Info.json에서 읽는 항목. 비어 있거나 없는 항목은 예전 방식으로 대체한다 —
 # 제목은 폴더 이름, 링크는 link.txt, 설명은 .txt 파일.
@@ -224,7 +227,7 @@ def scan(upload_dir: Path) -> tuple[list[Work], list[str]]:
         return [], [f"업로드 폴더가 없습니다: {upload_dir}"]
 
     works: list[Work] = []
-    taken_slugs: set[str] = set()
+    taken_slugs: set[str] = set(RESERVED_SLUGS)
     entries, dir_warnings = _sorted_children(upload_dir)
     warnings.extend(dir_warnings)
     for entry in entries:

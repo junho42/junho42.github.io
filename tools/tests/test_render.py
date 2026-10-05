@@ -380,7 +380,7 @@ def test_CSS와_JS_주소에_내용_기반_버전이_붙는다(tmp_path):
     assert f'href="../../assets/css/style.css?v={css}"' in post
 
 
-SYMBOL = {"src": "media/_site/faran_symbol-880.webp", "w": 880, "h": 447}
+SYMBOL = {"src": "media/site/faran_symbol-880.webp", "w": 880, "h": 447}
 
 
 def test_Contact는_좌측_심볼과_우측_본문으로_나뉜다(tmp_path):
@@ -393,7 +393,7 @@ def test_Contact는_좌측_심볼과_우측_본문으로_나뉜다(tmp_path):
     symbol = html.index('<div class="contact-symbol">')
     body = html.index('<section class="contact-body">')
     assert split < symbol < body
-    assert 'src="media/_site/faran_symbol-880.webp"' in html
+    assert 'src="media/site/faran_symbol-880.webp"' in html
     # 제목은 화면에서만 숨기고 스크린리더에는 남긴다
     assert '<h1 class="sr-only">Contact</h1>' in html
 
@@ -436,7 +436,7 @@ def test_심볼은_빌드가_만든_웹용_사본의_실제_크기로_들어간�
     render_site(_manifest(), dict(CONFIG, symbol=SYMBOL), tmp_path, TEMPLATES)
     html = (tmp_path / "contact.html").read_text(encoding="utf-8")
 
-    assert '<img src="media/_site/faran_symbol-880.webp" alt="NAME" width="880" height="447">' in html
+    assert '<img src="media/site/faran_symbol-880.webp" alt="NAME" width="880" height="447">' in html
 
 
 def test_심볼이_없으면_좌측_칸도_없다(tmp_path):
