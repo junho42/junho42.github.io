@@ -66,6 +66,7 @@ def test_manifest에_게시물이_한_줄로_담긴다(tmp_path):
     assert entry["url"] == "works/작업/"
     assert entry["video"]["kind"] == "youtube"
     assert entry["body"] == "<p>본문</p>"
+    assert entry["genre"] == ""
     assert warnings == []
 
 

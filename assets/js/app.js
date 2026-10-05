@@ -1,7 +1,7 @@
 /* 포트폴리오 동작 — 의존성 없음.
    JS가 없어도 그리드와 게시물은 정적 HTML로 전부 보인다.
    여기서 하는 일은 메이슨리 배치, 스크롤에 따라 카드 풀기, 맨 위로
-   버튼, 이미지 확대다.
+   버튼, 이미지 확대, Contact의 이메일·전화 복사다.
    카드는 모두 이미 HTML에 들어 있고, 여기서는 숨김만 걷어낸다 —
    네트워크 요청도, 가져올 데이터도 없다. */
 (function () {
@@ -121,7 +121,61 @@
     syncToTop();
   }
 
-  // 4) 이미지 확대
+  // 4) Contact — 이메일·전화 버튼을 누르면 값이 클립보드에 들어간다.
+  //    결과는 화면 하단 토스트로 알린다. 토스트가 role="status"라
+  //    스크린리더도 같은 문구를 읽는다.
+  var toast = document.querySelector('.toast');
+  var toastTimer = null;
+
+  // navigator.clipboard는 https·localhost에서만 열린다. 파일을 바로 열었을
+  // 때(file://)를 위해 예전 방식(execCommand)으로 한 번 더 시도한다.
+  function legacyCopy(text) {
+    var field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (error) { ok = false; }
+    document.body.removeChild(field);
+    return ok ? Promise.resolve() : Promise.reject(new Error('copy failed'));
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return legacyCopy(text);
+      });
+    }
+    return legacyCopy(text);
+  }
+
+  function showToast(message) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    // 연달아 누르면 타이머를 새로 걸어 마지막 클릭부터 다시 2초를 센다.
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.classList.remove('is-visible');
+    }, 2000);
+  }
+
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var text = button.getAttribute('data-copy');
+      copyText(text).then(
+        function () { showToast('복사 되었습니다'); },
+        function () { showToast('복사하지 못했습니다. 직접 선택해 복사해 주세요.'); }
+      );
+    });
+  });
+
+  // 5) 이미지 확대 — 확대할 이미지가 없으면 여기서 함수 전체를 끝낸다.
+  //    그래서 이 섹션은 항상 맨 마지막이어야 한다. 아래에 붙인 코드는
+  //    이미지 없는 페이지(Contact 등)에서 실행되지 않는다.
   var zoomable = Array.prototype.slice.call(document.querySelectorAll('.shot img[data-zoom]'));
   if (!zoomable.length) return;
 

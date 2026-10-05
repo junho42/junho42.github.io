@@ -12,3 +12,8 @@ exclude:
   - tools/
   - docs/
   - README.md
+  # 작업물 폴더에 복사해 쓰는 Info.json 빈 양식과 로컬 미리보기용 실행 파일,
+  # 빌드가 HTML에 넣는 페이지 제목·연락처 원본
+  - Info.json
+  - localhost.bat
+  - define.json

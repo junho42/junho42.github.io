@@ -13,6 +13,8 @@ from PIL import Image, ImageOps
 
 COVER_WIDTH = 600
 GALLERY_WIDTH = 1600
+# Contact 왼쪽 심볼. 화면에서 최대 440px 남짓이라 고해상도 화면을 감안해 두 배.
+SYMBOL_WIDTH = 880
 WEBP_QUALITY = 82
 
 _YOUTUBE_THUMBNAILS = (
@@ -67,6 +69,18 @@ def make_cover(source: Path, dest: Path, width: int = COVER_WIDTH) -> tuple[int,
 def make_gallery(source: Path, dest: Path, width: int = GALLERY_WIDTH) -> tuple[int, int]:
     """비율을 유지한 채 가로를 맞춘다. 원본보다 크게 늘리지 않는다."""
     return _save(_resize_to_width(_load(source), width), dest)
+
+
+def make_symbol(source: Path, dest: Path, width: int = SYMBOL_WIDTH) -> tuple[int, int]:
+    """로고처럼 배경이 투명한 이미지를 웹용으로 줄인다.
+
+    _load()는 사진용이라 RGB로 바꿔 투명한 부분을 검게 칠한다. 심볼은
+    어두운 면 위에 얹히므로 투명도를 그대로 지켜야 한다.
+    """
+    with Image.open(source) as image:
+        image.load()
+        rgba = ImageOps.exif_transpose(image).convert("RGBA")
+    return _save(_resize_to_width(rgba, width), dest)
 
 
 def fetch_youtube_cover(video_id: str, dest: Path, opener=None) -> bool:

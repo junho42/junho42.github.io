@@ -198,3 +198,114 @@ def test_본문_txt가_깨진_심볼릭_링크면_경고하고_건너뛴다(tmp_
 
     assert works[0].body == ""
     assert any("memo.txt" in w for w in warnings)
+
+
+def _info(root, folder, data):
+    import json
+    return _make(root, f"{folder}/Info.json", json.dumps(data, ensure_ascii=False).encode("utf-8"))
+
+
+def test_Info_json의_제목과_장르를_쓴다(tmp_path):
+    _make(tmp_path, "01_폴더이름/01.jpg")
+    _info(tmp_path, "01_폴더이름", {"title": "진짜 제목", "genre": "뮤직비디오"})
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].title == "진짜 제목"
+    assert works[0].genre == "뮤직비디오"
+    # 주소와 순서는 폴더 이름에서 온다 — 제목을 고쳐도 링크가 깨지지 않는다
+    assert works[0].slug == "폴더이름"
+    assert works[0].order == 1
+    assert warnings == []
+
+
+def test_Info_json이_없으면_폴더_이름이_제목이고_장르는_비어_있다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+
+    works, _ = scan(tmp_path)
+
+    assert works[0].title == "작업"
+    assert works[0].genre == ""
+
+
+def test_Info_json의_빈_값은_기존_방식으로_대체된다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _make(tmp_path, "작업/memo.txt", "메모 본문".encode("utf-8"))
+    _info(tmp_path, "작업", {"title": "", "genre": "", "description": "", "link": ""})
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].title == "작업"
+    assert "메모 본문" in works[0].body
+    assert warnings == []
+
+
+def test_Info_json의_설명이_txt보다_우선한다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _make(tmp_path, "작업/memo.txt", "메모 본문".encode("utf-8"))
+    _info(tmp_path, "작업", {"description": "첫 줄\n\n둘째 단락"})
+
+    works, _ = scan(tmp_path)
+
+    assert works[0].body == "<p>첫 줄</p>\n<p>둘째 단락</p>"
+
+
+def test_Info_json의_링크가_link_txt보다_우선한다(tmp_path):
+    _make(tmp_path, "작업/link.txt", b"https://vimeo.com/111")
+    _info(tmp_path, "작업", {"link": "https://www.youtube.com/watch?v=abcdefghijk"})
+
+    works, _ = scan(tmp_path)
+
+    assert works[0].video["kind"] == "youtube"
+    assert works[0].video["id"] == "abcdefghijk"
+
+
+def test_Info_json_링크가_주소가_아니면_경고하고_link_txt로_대체한다(tmp_path):
+    _make(tmp_path, "작업/link.txt", b"https://vimeo.com/111")
+    _info(tmp_path, "작업", {"link": "example.com"})
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].video["kind"] == "vimeo"
+    assert any("Info.json" in w and "link" in w for w in warnings)
+
+
+def test_Info_json이_깨져_있으면_경고하고_기존_방식을_쓴다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _make(tmp_path, "작업/Info.json", b"{ title: ")
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].title == "작업"
+    assert any("Info.json" in w for w in warnings)
+
+
+def test_Info_json의_문자열이_아닌_값은_경고하고_무시한다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _info(tmp_path, "작업", {"title": 123, "genre": "광고"})
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].title == "작업"
+    assert works[0].genre == "광고"
+    assert any("title" in w for w in warnings)
+
+
+def test_Info_json은_메모장_CP949로_저장해도_읽힌다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _make(tmp_path, "작업/info.json", '{"genre": "광고"}'.encode("cp949"))
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].genre == "광고"
+    assert warnings == []
+
+
+def test_Info_json의_영상이_아닌_주소는_link_txt처럼_일반_링크가_된다(tmp_path):
+    _make(tmp_path, "작업/01.jpg")
+    _info(tmp_path, "작업", {"link": "https://example.com/page"})
+
+    works, warnings = scan(tmp_path)
+
+    assert works[0].video == {"kind": "link", "id": None, "embed": None, "url": "https://example.com/page"}
+    assert warnings == []

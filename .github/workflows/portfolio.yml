@@ -10,6 +10,7 @@ on:
       - 'templates/**'
       - 'assets/**'
       - 'site.config.json'
+      - 'define.json'
       - 'tools/**'
       - '.github/workflows/portfolio.yml'
   workflow_dispatch:

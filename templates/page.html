@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{TITLE}}</title>
 {{META}}
-<link rel="stylesheet" href="{{REL}}assets/css/style.css">
+<link rel="icon" href="{{REL}}assets/img/faran_favicon.ico">
+<link rel="stylesheet" href="{{REL}}assets/css/style.css?v={{CSS_V}}">
 </head>
-<body>
+<body id="top"{{BODY_CLASS}}>
 <a class="skip" href="#main">본문으로 건너뛰기</a>
-<header class="masthead" id="top">
+<header class="masthead">
+  <a class="brand" href="{{REL}}index.html"><span class="header-text">{{SITE_NAME}}</span></a>
   <nav class="nav">
     {{NAV}}
   </nav>
@@ -19,6 +21,6 @@
 </main>
 <div class="footer" aria-hidden="true"></div>
 <a class="to-top" href="#top" aria-label="맨 위로">↑</a>
-<script src="{{REL}}assets/js/app.js" defer></script>
+<script src="{{REL}}assets/js/app.js?v={{JS_V}}" defer></script>
 </body>
 </html>

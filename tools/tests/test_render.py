@@ -93,7 +93,8 @@ def test_목록_페이지는_접두사_없이_참조한다(tmp_path):
     render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
     html = (tmp_path / "index.html").read_text(encoding="utf-8")
 
-    assert 'href="assets/css/style.css"' in html
+    # 뒤에 ?v=버전이 붙으므로 여는 따옴표부터 경로까지만 본다
+    assert 'href="assets/css/style.css?v=' in html
     assert "../" not in html
 
 
@@ -234,3 +235,244 @@ def test_게시물_아래에_다른_작업물_그리드가_온다(tmp_path):
     assert f'href="../../{own_url}"' not in first
     for other in ("작업2", "작업3"):
         assert f'href="../../{quote(f"works/{other}/", safe="/-_.~")}"' in first
+
+
+def test_카드에_장르가_있으면_구분선과_함께_제목_아래에_나온다(tmp_path):
+    manifest = _manifest(1)
+    manifest["works"][0]["genre"] = "뮤직<비디오>"
+    render_site(manifest, CONFIG, tmp_path, TEMPLATES)
+    index = (tmp_path / "index.html").read_text(encoding="utf-8")
+
+    assert '<span class="card-name">작업1</span>' in index
+    assert '<span class="card-rule" aria-hidden="true"></span>' in index
+    assert '<span class="card-genre">뮤직&lt;비디오&gt;</span>' in index
+
+
+def test_카드에_장르가_없으면_구분선도_없다(tmp_path):
+    render_site(_manifest(1), CONFIG, tmp_path, TEMPLATES)
+    index = (tmp_path / "index.html").read_text(encoding="utf-8")
+
+    assert '<span class="card-name">작업1</span>' in index
+    assert "card-rule" not in index
+    assert "card-genre" not in index
+
+
+def _page_title(html):
+    return html.split("<title>", 1)[1].split("</title>", 1)[0]
+
+
+def test_title이_있으면_모든_페이지_제목이_그_값으로_고정된다(tmp_path):
+    config = dict(CONFIG, title="공용 제목")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+
+    # 페이지 이름이나 작업물 제목을 앞에 붙이지 않는다
+    assert _page_title((tmp_path / "index.html").read_text(encoding="utf-8")) == "공용 제목"
+    assert _page_title((tmp_path / "contact.html").read_text(encoding="utf-8")) == "공용 제목"
+    post = (tmp_path / "works" / "작업1" / "index.html").read_text(encoding="utf-8")
+    assert _page_title(post) == "공용 제목"
+    # 헤더의 상호는 title이 아니라 siteName이다
+    assert '<a class="brand" href="index.html"><span class="header-text">NAME</span></a>' in (tmp_path / "index.html").read_text(encoding="utf-8")
+
+
+def test_title이_없으면_siteName을_페이지_제목에_쓴다(tmp_path):
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+
+    assert _page_title((tmp_path / "index.html").read_text(encoding="utf-8")) == "NAME"
+
+
+def test_Contact에_이름_이메일_전화_인스타그램이_들어간다(tmp_path):
+    config = dict(CONFIG, name="홍길동", phone="010-1234-5678")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    # 이름도 다른 항목처럼 '이름표 값' 한 줄이고, 목록의 맨 앞이다
+    assert '<ul class="contact-list">\n    <li><span class="contact-label">Name</span><span>홍길동</span></li>' in html
+    # 이메일과 전화는 누르면 복사되는 버튼이다(app.js)
+    assert '<button class="copy" type="button" data-copy="hello@example.com">hello@example.com</button>' in html
+    assert '<button class="copy" type="button" data-copy="010-1234-5678">010-1234-5678</button>' in html
+    assert '<a href="https://instagram.com/x" target="_blank" rel="noopener">@x</a>' in html
+    assert 'role="status"' in html
+
+
+def test_인스타그램을_아이디로만_적어도_주소가_된다(tmp_path):
+    config = dict(CONFIG, instagram="@faran.color")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert '<a href="https://www.instagram.com/faran.color/" target="_blank" rel="noopener">@faran.color</a>' in html
+
+
+def test_연락처_값이_비어_있으면_그_줄은_빠진다(tmp_path):
+    config = dict(CONFIG, email="", instagram="", name="", phone="")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "contact-list" not in html
+    assert ">Name</span>" not in html
+    assert 'role="status"' not in html
+
+
+def test_연락처_값은_이스케이프된다(tmp_path):
+    config = dict(CONFIG, name="<b>이름</b>", phone='"010"')
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "<b>이름</b>" not in html
+    assert 'data-copy="&quot;010&quot;"' in html
+
+
+def test_주소가_있으면_주소와_지도가_나온다(tmp_path):
+    config = dict(CONFIG, address="서울특별시 중구 세종대로 110")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert '<span class="contact-label">Address</span><span>서울특별시 중구 세종대로 110</span>' in html
+    q = quote("서울특별시 중구 세종대로 110")
+    assert f'src="https://maps.google.com/maps?q={q}&amp;output=embed"' in html
+    assert 'title="지도: 서울특별시 중구 세종대로 110"' in html
+    assert 'loading="lazy"' in html
+
+
+def test_주소가_없으면_주소_줄과_지도가_없다(tmp_path):
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "Address" not in html
+    assert "contact-map" not in html
+
+
+def test_주소만_있어도_주소와_지도가_나온다(tmp_path):
+    config = dict(CONFIG, email="", instagram="", name="", phone="", address="부산")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "<span>부산</span>" in html
+    assert "contact-map" in html
+    # 복사할 버튼이 없으니 복사 알림 자리도 없다
+    assert 'role="status"' not in html
+
+
+def test_복사_버튼이_없으면_복사_알림_자리도_없다(tmp_path):
+    config = dict(CONFIG, email="", phone="")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "@x</a>" in html
+    assert 'role="status"' not in html
+
+
+def test_CSS와_JS_주소에_내용_기반_버전이_붙는다(tmp_path):
+    # 파일이 바뀌면 주소가 바뀌어 브라우저가 예전 캐시를 쓰지 못한다.
+    import hashlib
+
+    def version(relative):
+        data = (TEMPLATES.parent / relative).read_bytes()
+        return hashlib.sha1(data).hexdigest()[:8]
+
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+    post = (tmp_path / "works" / "작업1" / "index.html").read_text(encoding="utf-8")
+
+    css = version("assets/css/style.css")
+    js = version("assets/js/app.js")
+    assert f'href="assets/css/style.css?v={css}"' in html
+    assert f'src="assets/js/app.js?v={js}"' in html
+    assert f'href="../../assets/css/style.css?v={css}"' in post
+
+
+SYMBOL = {"src": "media/_site/faran_symbol-880.webp", "w": 880, "h": 447}
+
+
+def test_Contact는_좌측_심볼과_우측_본문으로_나뉜다(tmp_path):
+    render_site(_manifest(), dict(CONFIG, symbol=SYMBOL), tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    # 예전의 어두운 제목 블록은 없다
+    assert "page-contact" not in html
+    split = html.index('<div class="contact-split">')
+    symbol = html.index('<div class="contact-symbol">')
+    body = html.index('<section class="contact-body">')
+    assert split < symbol < body
+    assert 'src="media/_site/faran_symbol-880.webp"' in html
+    # 제목은 화면에서만 숨기고 스크린리더에는 남긴다
+    assert '<h1 class="sr-only">Contact</h1>' in html
+
+
+def test_Contact_페이지에만_body_클래스가_붙는다(tmp_path):
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+
+    assert '<body id="top" class="is-contact">' in (tmp_path / "contact.html").read_text(encoding="utf-8")
+    assert '<body id="top">' in (tmp_path / "index.html").read_text(encoding="utf-8")
+
+
+def test_Contact_본문_맨_위에_contactTitle이_온다(tmp_path):
+    config = dict(CONFIG, contactTitle="빛을 <다루는> 마음")
+    render_site(_manifest(), config, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    title = html.index('<h2 class="contact-title">빛을 &lt;다루는&gt; 마음</h2>')
+    assert html.index('<section class="contact-body">') < title < html.index("메일로 연락 주세요")
+
+
+def test_contactTitle이_비어_있으면_제목이_없다(tmp_path):
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "contact-title" not in html
+
+
+def test_맨_위로_목적지는_고정되지_않는_body다(tmp_path):
+    # Contact에서는 헤더가 sticky라 화면 맨 위에 늘 보인다. 목적지가 헤더면
+    # 브라우저가 "이미 보인다"며 스크롤하지 않아 맨 위로 버튼이 먹통이 된다.
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+    for name in ("index.html", "contact.html"):
+        html = (tmp_path / name).read_text(encoding="utf-8")
+        assert '<header class="masthead">' in html
+        assert html.count('id="top"') == 1
+        assert '<a class="to-top" href="#top"' in html
+
+
+def test_심볼은_빌드가_만든_웹용_사본의_실제_크기로_들어간다(tmp_path):
+    render_site(_manifest(), dict(CONFIG, symbol=SYMBOL), tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert '<img src="media/_site/faran_symbol-880.webp" alt="NAME" width="880" height="447">' in html
+
+
+def test_심볼이_없으면_좌측_칸도_없다(tmp_path):
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert "contact-symbol" not in html
+    assert '<section class="contact-body">' in html
+
+
+def test_헤더_글자는_세로_축소용_span에_담긴다(tmp_path):
+    # 세로 80%는 transform으로 준다. 메뉴의 <a>에 직접 걸면 타원 테두리까지
+    # 찌그러지므로 글자만 감싼 span에 건다.
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+    html = (tmp_path / "contact.html").read_text(encoding="utf-8")
+
+    assert '<a class="brand" href="index.html"><span class="header-text">NAME</span></a>' in html
+    assert '<a href="index.html"><span class="header-text">works</span></a>' in html
+    assert '<a class="is-current" aria-current="page" href="contact.html"><span class="header-text">contact</span></a>' in html
+
+
+def test_모든_페이지에_파비콘이_상대경로로_들어간다(tmp_path):
+    render_site(_manifest(), CONFIG, tmp_path, TEMPLATES)
+
+    index = (tmp_path / "index.html").read_text(encoding="utf-8")
+    post = (tmp_path / "works" / "작업1" / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="icon" href="assets/img/faran_favicon.ico">' in index
+    assert '<link rel="icon" href="../../assets/img/faran_favicon.ico">' in post
+
+
+def test_이전_다음_화살표는_글자가_아니라_SVG_아이콘이다(tmp_path):
+    # ‹ › 글자는 글꼴 안에서 소문자 높이쯤에 그려져 박스 가운데보다 아래로
+    # 처진다. 도형은 박스 정중앙에 놓인다.
+    render_site(_manifest(3), CONFIG, tmp_path, TEMPLATES)
+    middle = (tmp_path / "works" / "작업2" / "index.html").read_text(encoding="utf-8")
+
+    assert "‹</a>" not in middle and "›</a>" not in middle
+    assert middle.count('<svg class="post-arrow-icon"') == 2
+    assert 'aria-hidden="true"' in middle

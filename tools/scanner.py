@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +22,12 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
 VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov"}
 
 LINK_FILENAME = "link.txt"
+INFO_FILENAME = "info.json"
 COVER_STEM = "cover"
+
+# Info.json에서 읽는 항목. 비어 있거나 없는 항목은 예전 방식으로 대체한다 —
+# 제목은 폴더 이름, 링크는 link.txt, 설명은 .txt 파일.
+INFO_FIELDS = ("title", "genre", "description", "link")
 
 
 @dataclass
@@ -35,6 +41,7 @@ class Work:
     video: dict | None = None
     body: str = ""
     date: datetime | None = None
+    genre: str = ""
 
 
 def _visible(path: Path) -> bool:
@@ -58,12 +65,43 @@ def _sorted_children(directory: Path) -> tuple[list[Path], list[str]]:
     return sorted(visible, key=lambda child: natural_key(child.name)), []
 
 
+def _read_info(directory: Path, info_file: Path) -> tuple[dict[str, str], list[str]]:
+    """Info.json을 읽어 {항목: 값}을 돌려준다. 문제가 있으면 경고만 남긴다.
+
+    메모장으로 저장해도 깨지지 않도록 .txt와 같은 방식으로 인코딩을 판별한다.
+    """
+    label = f"{directory.name}/{info_file.name}"
+    try:
+        text, warning = read_text(info_file)
+    except OSError as exc:
+        return {}, [f"{label}: 파일을 읽지 못했습니다 ({exc})"]
+    warnings = [warning] if warning else []
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        return {}, warnings + [f"{label}: JSON 형식이 잘못되어 무시합니다 ({exc.lineno}번째 줄)"]
+    if not isinstance(data, dict):
+        return {}, warnings + [f"{label}: {{ }}로 감싼 형식이 아니어서 무시합니다"]
+
+    info: dict[str, str] = {}
+    for key in INFO_FIELDS:
+        value = data.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, str):
+            warnings.append(f"{label}: {key} 값은 따옴표로 감싼 글자여야 해서 무시합니다")
+            continue
+        info[key] = value.strip()
+    return info, warnings
+
+
 def _read_work(directory: Path) -> tuple[Work | None, list[str]]:
     warnings: list[str] = []
     images: list[Path] = []
     videos: list[Path] = []
     body_files: list[Path] = []
     link_file: Path | None = None
+    info_file: Path | None = None
 
     children, dir_warnings = _sorted_children(directory)
     warnings.extend(dir_warnings)
@@ -76,14 +114,27 @@ def _read_work(directory: Path) -> tuple[Work | None, list[str]]:
             images.append(child)
         elif suffix in VIDEO_EXTENSIONS:
             videos.append(child)
+        elif child.name.lower() == INFO_FILENAME:
+            info_file = child
         elif suffix == ".txt":
             if child.name.lower() == LINK_FILENAME:
                 link_file = child
             else:
                 body_files.append(child)
 
+    info: dict[str, str] = {}
+    if info_file is not None:
+        info, info_warnings = _read_info(directory, info_file)
+        warnings.extend(info_warnings)
+
     video: dict | None = None
-    if link_file is not None:
+    if info.get("link"):
+        video = parse_video_url(info["link"])
+        if video is None:
+            warnings.append(
+                f"{directory.name}/{info_file.name}: link 값이 http로 시작하는 주소가 아니어서 무시합니다"
+            )
+    if video is None and link_file is not None:
         try:
             text, warning = read_text(link_file)
         except OSError as exc:
@@ -116,6 +167,11 @@ def _read_work(directory: Path) -> tuple[Work | None, list[str]]:
         cover = images[0]
 
     body_parts = []
+    if info.get("description"):
+        # Info.json에 설명이 있으면 그것만 쓴다. .txt까지 이어 붙이면
+        # 같은 글이 두 번 들어가기 쉽다.
+        body_files = []
+        body_parts.append(body_to_html(info["description"]))
     for body_file in body_files:
         try:
             text, warning = read_text(body_file)
@@ -129,17 +185,20 @@ def _read_work(directory: Path) -> tuple[Work | None, list[str]]:
         if html:
             body_parts.append(html)
 
-    order, title = strip_order_prefix(directory.name)
+    # 주소(slug)와 순서는 언제나 폴더 이름에서 온다. Info.json의 제목을
+    # 고쳐도 이미 공유된 게시물 링크가 깨지지 않는다.
+    order, folder_title = strip_order_prefix(directory.name)
     return (
         Work(
-            title=title,
-            slug=title,
+            title=info.get("title") or folder_title,
+            slug=folder_title,
             order=order,
             directory=directory,
             images=images,
             cover=cover,
             video=video,
             body="\n".join(body_parts),
+            genre=info.get("genre", ""),
         ),
         warnings,
     )

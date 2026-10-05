@@ -7,10 +7,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from html import escape
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from textfile import body_to_html
 
@@ -54,6 +55,31 @@ def _url_path(path: str) -> str:
     return quote(path, safe="/-_.~")
 
 
+def _asset_version(path: Path) -> str:
+    """파일 내용에서 만든 짧은 버전. CSS·JS 주소 뒤에 ?v=로 붙인다.
+
+    파일이 바뀌면 주소가 바뀌므로 브라우저가 예전 캐시를 계속 쓰지 못한다 —
+    캐시 지시 헤더를 보내지 않는 로컬 서버와 GitHub Pages 둘 다에서 생기던
+    "고쳤는데 그대로" 문제를 막는다.
+    """
+    try:
+        return hashlib.sha1(path.read_bytes()).hexdigest()[:8]
+    except OSError:
+        return "0"
+
+
+def _chevron(points: str) -> str:
+    """이전·다음 화살표 아이콘. 글자(‹ ›)는 글꼴 안에서 아래로 처져 박스
+    가운데에 맞지 않으므로 24×24 정사각형 한가운데(12, 12)를 지나는 도형으로 그린다.
+    색은 currentColor라 링크 글자색(호버 포함)을 그대로 따른다.
+    """
+    return (
+        '<svg class="post-arrow-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+        f'<polyline points="{points}" fill="none" stroke="currentColor" stroke-width="1.5" '
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    )
+
+
 def _load(templates_dir: Path, name: str) -> str:
     return (templates_dir / name).read_text(encoding="utf-8")
 
@@ -74,15 +100,79 @@ def _meta_block(config: dict, title: str, description: str, absolute_cover: str 
     return "\n".join(lines)
 
 
-def _footer_links(config: dict) -> str:
-    parts = []
-    email = config.get("email")
-    if email:
-        parts.append(f'<a href="mailto:{escape(email)}">{escape(email)}</a>')
-    instagram = config.get("instagram")
+def _site_title(config: dict) -> str:
+    """모든 페이지의 <title>에 공용으로 들어가는 이름.
+
+    define.json의 title이 비어 있으면 헤더의 상호(siteName)로 대신한다.
+    """
+    return config.get("title") or config.get("siteName", "")
+
+
+def _instagram(value: str) -> tuple[str, str]:
+    """(주소, 보이는 글자). 주소 전체를 적어도, @아이디만 적어도 된다."""
+    if value.startswith(("http://", "https://")):
+        handle = urlparse(value).path.strip("/").split("/")[0]
+        return value, f"@{handle}" if handle else "Instagram"
+    handle = value.lstrip("@").strip("/")
+    return f"https://www.instagram.com/{handle}/", f"@{handle}"
+
+
+def _copy_button(value: str) -> str:
+    # 누르면 app.js가 data-copy 값을 클립보드에 넣는다.
+    safe = escape(value)
+    return f'<button class="copy" type="button" data-copy="{safe}">{safe}</button>'
+
+
+def _map_html(address: str) -> str:
+    """주소를 검색어로 넘긴 구글 지도 임베드. API 키가 필요 없는 형식이다."""
+    src = f"https://maps.google.com/maps?q={quote(address)}&output=embed"
+    return (
+        '<div class="contact-map">'
+        f'<iframe src="{escape(src)}" title="지도: {escape(address)}" '
+        'loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>'
+        "</div>"
+    )
+
+
+def _contact_html(config: dict) -> str:
+    """이름 / 이메일·전화(복사) / 인스타그램(링크) / 주소(+지도).
+
+    값이 비어 있는 항목은 줄째 뺀다.
+    """
+    rows = []
+    has_copy = False
+    name = config.get("name") or ""
+    if name:
+        rows.append(("Name", f"<span>{escape(name)}</span>"))
+    for key, label in (("email", "Email"), ("phone", "Phone")):
+        value = config.get(key) or ""
+        if value:
+            rows.append((label, _copy_button(value)))
+            has_copy = True
+    instagram = config.get("instagram") or ""
     if instagram:
-        parts.append(f'<a href="{escape(instagram)}" rel="noopener">Instagram</a>')
-    return " · ".join(parts)
+        url, text = _instagram(instagram)
+        rows.append(
+            ("Instagram", f'<a href="{escape(url)}" target="_blank" rel="noopener">{escape(text)}</a>')
+        )
+    address = config.get("address") or ""
+    if address:
+        rows.append(("Address", f"<span>{escape(address)}</span>"))
+
+    parts = []
+    if rows:
+        items = "\n".join(
+            f'    <li><span class="contact-label">{label}</span>{value}</li>'
+            for label, value in rows
+        )
+        parts.append(f'<ul class="contact-list">\n{items}\n  </ul>')
+    if has_copy:
+        # 복사 결과를 알리는 토스트. 화면 하단에 떴다 사라지고(app.js),
+        # role="status"라 스크린리더도 같은 문구를 읽는다.
+        parts.append('<div class="toast" role="status" aria-live="polite"></div>')
+    if address:
+        parts.append(_map_html(address))
+    return "\n  ".join(parts)
 
 
 def _absolute(config: dict, relative: str) -> str | None:
@@ -129,7 +219,7 @@ def _write(path: Path, html: str) -> Path:
 
 
 # 상단 메뉴. About 페이지는 없다 — 소개는 지금 어디에도 실리지 않는다.
-_NAV_ITEMS = (("index.html", "Works"), ("contact.html", "Contact"))
+_NAV_ITEMS = (("index.html", "works"), ("contact.html", "contact"))
 
 
 def _nav_html(rel: str, current: str) -> str:
@@ -142,10 +232,11 @@ def _nav_html(rel: str, current: str) -> str:
     for href, label in _NAV_ITEMS:
         if href == current:
             links.append(
-                f'<a class="is-current" aria-current="page" href="{rel}{href}">{label}</a>'
+                f'<a class="is-current" aria-current="page" href="{rel}{href}">'
+                f'<span class="header-text">{label}</span></a>'
             )
         else:
-            links.append(f'<a href="{rel}{href}">{label}</a>')
+            links.append(f'<a href="{rel}{href}"><span class="header-text">{label}</span></a>')
     return "\n    ".join(links)
 
 
@@ -158,8 +249,11 @@ def _page(
     meta: str,
     content: str,
     current: str = "",
+    body_class: str = "",
 ) -> str:
     rel = relative_prefix(depth)
+    # templates/ 옆의 assets/ 가 실제로 서빙되는 파일이다.
+    assets = templates_dir.parent / "assets"
     return render_template(
         _load(templates_dir, "page.html"),
         {
@@ -168,6 +262,9 @@ def _page(
             "META": meta,
             "SITE_NAME": escape(config.get("siteName", "")),
             "NAV": _nav_html(rel, current),
+            "BODY_CLASS": f' class="{body_class}"' if body_class else "",
+            "CSS_V": _asset_version(assets / "css" / "style.css"),
+            "JS_V": _asset_version(assets / "js" / "app.js"),
             "CONTENT": content,
         },
     )
@@ -187,6 +284,14 @@ def _grid_html(works: list[dict], rel: str, page_size: int, templates_dir: Path)
     for index, work in enumerate(works):
         cover = _cover_or_placeholder(work)
         badge = '<span class="badge">VIDEO</span>' if work.get("video") else ""
+        # 장르가 없으면 구분선도 뺀다 — 제목 아래 선만 덩그러니 남지 않게.
+        genre = work.get("genre") or ""
+        genre_html = (
+            '<span class="card-rule" aria-hidden="true"></span>'
+            f'<span class="card-genre">{escape(genre)}</span>'
+            if genre
+            else ""
+        )
         card = render_template(
             card_template,
             {
@@ -197,6 +302,7 @@ def _grid_html(works: list[dict], rel: str, page_size: int, templates_dir: Path)
                 "COVER_H": str(cover.get("h", 338)),
                 "TITLE": escape(work["title"]),
                 "BADGE": badge,
+                "GENRE": genre_html,
             },
         )
         if index >= page_size:
@@ -222,7 +328,7 @@ def _render_index(manifest: dict, config: dict, site_root: Path, templates_dir: 
 
     meta = _meta_block(
         config,
-        config.get("siteName", ""),
+        _site_title(config),
         config.get("tagline", ""),
         _absolute(config, _url_path(config.get("ogImage") or "")),
     )
@@ -230,7 +336,7 @@ def _render_index(manifest: dict, config: dict, site_root: Path, templates_dir: 
         templates_dir,
         config,
         depth=0,
-        title=config.get("siteName", ""),
+        title=_site_title(config),
         meta=meta,
         content=content,
         current="index.html",
@@ -241,21 +347,39 @@ def _render_index(manifest: dict, config: dict, site_root: Path, templates_dir: 
 def _render_contact(config: dict, site_root: Path, templates_dir: Path) -> Path:
     """Contact 페이지.
 
-    이메일·인스타그램 링크는 여기 본문에 들어간다. 푸터가 내용 없는 띠로
+    이름·이메일·전화·인스타그램·주소는 여기 본문에 들어간다. 푸터가 내용 없는 띠로
     바뀌면서 그 링크들이 실릴 곳이 사이트에 이 페이지밖에 없다.
     """
-    title = f"Contact — {config.get('siteName','')}"
+    # 페이지 제목은 모든 페이지에서 같다(define.json의 title)
+    title = _site_title(config)
     body = body_to_html(config.get("contactNote", "") or "")
-    links = _footer_links(config)
-    links_html = f'\n  <p class="page-contact-links">{links}</p>' if links else ""
-    # article에는 제목만 두고(어두운 블록), 본문과 연락처는 그 다음 섹션에 온다.
+    # 본문 맨 위의 제목 — 각오나 마음가짐 한 줄. 비우면 빠진다.
+    headline = config.get("contactTitle") or ""
+    if headline:
+        body = f'<h2 class="contact-title">{escape(headline)}</h2>\n  {body}'
+    contact = _contact_html(config)
+    links_html = f"\n  {contact}" if contact else ""
+    # 화면을 반으로 나눠 왼쪽에는 심볼을 고정하고, 오른쪽 본문만 스크롤된다.
+    # 제목은 화면에서 숨기되 스크린리더와 문서 구조에는 남긴다.
+    # 심볼은 빌드가 assets/img/faran_symbol.png 에서 만든 웹용 사본이다(build.py).
+    # 원본이 없으면 왼쪽 칸을 통째로 뺀다.
+    symbol = config.get("symbol")
+    symbol_html = ""
+    if symbol:
+        symbol_html = (
+            '<div class="contact-symbol">'
+            f'<img src="{_url_path(symbol["src"])}" alt="{escape(config.get("siteName", ""))}" '
+            f'width="{symbol["w"]}" height="{symbol["h"]}">'
+            "</div>\n"
+        )
     content = (
-        '<article class="page page-contact">'
-        '<h1 class="page-title">Contact</h1>'
-        "</article>\n"
+        '<h1 class="sr-only">Contact</h1>\n'
+        '<div class="contact-split">\n'
+        f"{symbol_html}"
         '<section class="contact-body">\n'
         f"  {body}{links_html}\n"
-        "</section>"
+        "</section>\n"
+        "</div>"
     )
     html = _page(
         templates_dir,
@@ -265,6 +389,8 @@ def _render_contact(config: dict, site_root: Path, templates_dir: Path) -> Path:
         meta=_meta_block(config, title, "", None),
         content=content,
         current="contact.html",
+        # 넓은 화면에서 헤더와 왼쪽 심볼을 고정하는 스위치(style.css)
+        body_class="is-contact",
     )
     return _write(site_root / "contact.html", html)
 
@@ -305,12 +431,12 @@ def _render_post(
     if previous_work:
         arrows.append(
             f'<a class="post-arrow post-arrow-prev" href="{rel}{_url_path(previous_work["url"])}"'
-            f' aria-label="이전 작업물: {escape(previous_work["title"])}">‹</a>'
+            f' aria-label="이전 작업물: {escape(previous_work["title"])}">{_chevron("15 6 9 12 15 18")}</a>'
         )
     if next_work:
         arrows.append(
             f'<a class="post-arrow post-arrow-next" href="{rel}{_url_path(next_work["url"])}"'
-            f' aria-label="다음 작업물: {escape(next_work["title"])}">›</a>'
+            f' aria-label="다음 작업물: {escape(next_work["title"])}">{_chevron("9 6 15 12 9 18")}</a>'
         )
     nav_html = f'<nav class="post-arrows">{"".join(arrows)}</nav>' if arrows else ""
 
@@ -332,15 +458,15 @@ def _render_post(
 
     meta = _meta_block(
         config,
-        f"{work['title']} — {config.get('siteName','')}",
-        config.get("siteName", ""),
+        f"{work['title']} — {_site_title(config)}",
+        _site_title(config),
         _absolute(config, _url_path(cover.get("src", ""))),
     )
     html = _page(
         templates_dir,
         config,
         depth=depth,
-        title=f"{work['title']} — {config.get('siteName','')}",
+        title=_site_title(config),
         meta=meta,
         content=content,
         # 게시물은 Works에 속하므로 그 탭을 켠 상태로 둔다

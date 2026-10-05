@@ -160,3 +160,21 @@ def test_유튜브_썸네일을_못_받으면_False(tmp_path):
     dest = tmp_path / "out" / "cover-600.webp"
     assert fetch_youtube_cover("dQw4w9WgXcQ", dest, opener=failing_opener) is False
     assert not dest.exists()
+
+
+def test_심볼은_투명도를_지킨_채_가로_880px로_줄어든다(tmp_path):
+    from images import make_symbol
+
+    source = tmp_path / "symbol.png"
+    image = Image.new("RGBA", (1600, 800), (0, 0, 0, 0))
+    image.paste((200, 200, 200, 255), (400, 200, 1200, 600))
+    image.save(source)
+    dest = tmp_path / "out" / "symbol.webp"
+
+    size = make_symbol(source, dest)
+
+    assert size == (880, 440)
+    with Image.open(dest) as result:
+        assert result.mode == "RGBA"
+        assert result.getpixel((5, 5))[3] == 0
+        assert result.getpixel((440, 220))[3] == 255

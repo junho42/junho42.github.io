@@ -32,6 +32,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 from dates import git_added_at  # noqa: E402
 from linkcheck import check_links  # noqa: E402
+from images import SYMBOL_WIDTH, image_size, make_symbol, needs_rebuild  # noqa: E402
 from manifest import build_manifest, write_manifest  # noqa: E402
 from render import render_site  # noqa: E402
 from scanner import scan  # noqa: E402
@@ -41,6 +42,61 @@ DEFAULT_ROOT = Path(__file__).resolve().parents[1]
 
 def _load_config(site_root: Path) -> dict:
     return json.loads((site_root / "site.config.json").read_text(encoding="utf-8"))
+
+
+# define.json — 페이지 제목과 연락처. 작가가 가장 자주 고칠 값만 따로 모았다.
+DEFINE_FIELDS = (
+    "title", "email", "instagram", "name", "phone", "address",
+    "contact-title", "contact-content",
+)
+# define.json의 이름 → 렌더러가 읽는 설정 이름. 나머지는 이름이 같다.
+DEFINE_RENAMES = {"contact-title": "contactTitle", "contact-content": "contactNote"}
+
+
+def _load_define(site_root: Path) -> tuple[dict, list[str]]:
+    """define.json을 읽어 (값, 경고)를 돌려준다. 파일이 없으면 빈 값이다.
+
+    문법 오류는 json.JSONDecodeError로 그대로 올려 build()가 줄 번호와
+    함께 알리게 한다 — 연락처가 조용히 사라지는 것보다 빌드가 멈추는 편이 낫다.
+    """
+    path = site_root / "define.json"
+    if not path.exists():
+        return {}, []
+    data = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(data, dict):
+        return {}, ["define.json: { }로 감싼 형식이 아니어서 무시합니다"]
+    values: dict[str, str] = {}
+    warnings: list[str] = []
+    for key in DEFINE_FIELDS:
+        value = data.get(key)
+        if value is None:
+            continue
+        if not isinstance(value, str):
+            warnings.append(f"define.json: {key} 값은 따옴표로 감싼 글자여야 해서 무시합니다")
+            continue
+        values[key] = value.strip()
+    return values, warnings
+
+
+# Contact 왼쪽 심볼의 원본. 이 파일만 바꿔 넣으면 다음 빌드에서 웹용
+# 사본이 다시 만들어진다. 사본은 media/_site/ 에 둔다 — media/ 는 워크플로가
+# 커밋하는 산출물 폴더이고, "_"로 시작하는 이름은 작업물 폴더가 쓸 수 없어
+# (scanner._visible) 게시물 주소와 겹치지 않는다.
+SYMBOL_SOURCE = Path("assets") / "img" / "faran_symbol.png"
+SYMBOL_DEST = Path("media") / "_site" / f"faran_symbol-{SYMBOL_WIDTH}.webp"
+
+
+def _build_symbol(site_root: Path) -> tuple[dict | None, list[str]]:
+    """심볼 웹용 사본을 만들고 ({src, w, h}, 경고)를 돌려준다. 원본이 없으면 None."""
+    source = site_root / SYMBOL_SOURCE
+    if not source.exists():
+        return None, []
+    dest = site_root / SYMBOL_DEST
+    try:
+        size = make_symbol(source, dest) if needs_rebuild(source, dest) else image_size(dest)
+    except OSError as exc:
+        return None, [f"{SYMBOL_SOURCE.as_posix()}: 심볼 이미지를 열 수 없어 Contact에서 뺐습니다 ({exc})"]
+    return {"src": SYMBOL_DEST.as_posix(), "w": size[0], "h": size[1]}, []
 
 
 def _repo_root(site_root: Path) -> Path:
@@ -95,7 +151,17 @@ def build(site_root: Path, repo_root: Path) -> tuple[int, list[str]]:
     except json.JSONDecodeError as exc:
         return 1, [f"site.config.json의 {exc.lineno}번째 줄에 문법 오류가 있습니다: {exc.msg}"]
 
+    try:
+        define, define_warnings = _load_define(site_root)
+    except OSError as exc:
+        return 1, [f"define.json을 읽을 수 없습니다: {exc}"]
+    except json.JSONDecodeError as exc:
+        return 1, [f"define.json의 {exc.lineno}번째 줄에 문법 오류가 있습니다: {exc.msg}"]
+    # define.json이 site.config.json보다 우선한다.
+    config = {**config, **{DEFINE_RENAMES.get(key, key): value for key, value in define.items()}}
+
     works, warnings = scan(site_root / "upload")
+    warnings = define_warnings + warnings
 
     for work in works:
         work.date = git_added_at(repo_root, work.directory)
@@ -107,6 +173,10 @@ def build(site_root: Path, repo_root: Path) -> tuple[int, list[str]]:
     )
     warnings.extend(media_warnings)
     write_manifest(manifest, site_root / "works.json")
+
+    symbol, symbol_warnings = _build_symbol(site_root)
+    warnings.extend(symbol_warnings)
+    config["symbol"] = symbol
 
     pages, render_warnings = render_site(
         manifest, config, site_root, site_root / "templates"

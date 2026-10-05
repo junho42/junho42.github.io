@@ -116,6 +116,7 @@ def _build_work(
 
     entry = {
         "title": work.title,
+        "genre": work.genre,
         "slug": work.slug,
         "url": f"works/{work.slug}/",
         "date": work.date.isoformat() if work.date else None,

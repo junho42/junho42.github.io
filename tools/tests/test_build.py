@@ -27,6 +27,9 @@ def _sample_site(tmp_path):
 
     for relative in ("templates", "assets"):
         _copy_tree(PORTFOLIO / relative, site / relative)
+    # 실제 심볼 원본(수 MB)은 빼서 픽스처를 저장소 자산과 무관하게 둔다.
+    # 심볼이 필요한 테스트는 작은 이미지를 직접 만든다.
+    (site / "assets" / "img" / "faran_symbol.png").unlink(missing_ok=True)
     (site / "site.config.json").write_text(
         (PORTFOLIO / "site.config.json").read_text(encoding="utf-8"), encoding="utf-8"
     )
@@ -167,3 +170,113 @@ def test_git_저장소가_아니면_부모_디렉터리로_대체한다(tmp_path
     repo_root = _repo_root(site)
 
     assert repo_root == site.parent
+
+
+def _define(site, text):
+    (site / "define.json").write_text(text, encoding="utf-8")
+
+
+def test_define_json의_값이_페이지에_들어간다(tmp_path):
+    site = _sample_site(tmp_path)
+    _define(
+        site,
+        json.dumps(
+            {
+                "title": "정의 제목",
+                "email": "a@b.com",
+                "instagram": "@who",
+                "name": "이름",
+                "phone": "010-0000-0000",
+            },
+            ensure_ascii=False,
+        ),
+    )
+
+    result = _run(site)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    index = (site / "index.html").read_text(encoding="utf-8")
+    contact = (site / "contact.html").read_text(encoding="utf-8")
+    assert "<title>정의 제목</title>" in index
+    assert 'data-copy="a@b.com"' in contact
+    assert 'data-copy="010-0000-0000"' in contact
+    assert "@who</a>" in contact
+    assert '<li><span class="contact-label">Name</span><span>이름</span></li>' in contact
+
+
+def test_define_json이_문법_오류면_친절한_메시지로_끝난다(tmp_path):
+    site = _sample_site(tmp_path)
+    _define(site, '{\n  "title": "제목",\n}\n')
+
+    result = _run(site)
+
+    assert result.returncode != 0
+    output = result.stdout + result.stderr
+    assert "define.json" in output
+    assert "Traceback" not in output
+    assert "3" in output
+
+
+def test_define_json이_없어도_빌드된다(tmp_path):
+    site = _sample_site(tmp_path)
+
+    result = _run(site)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_define_json의_문자열이_아닌_값은_경고하고_무시한다(tmp_path):
+    site = _sample_site(tmp_path)
+    _define(site, '{"phone": 1012345678, "name": "이름"}')
+
+    result = _run(site)
+
+    assert result.returncode == 0
+    assert "phone" in result.stdout
+    contact = (site / "contact.html").read_text(encoding="utf-8")
+    assert "1012345678" not in contact
+    assert '<li><span class="contact-label">Name</span><span>이름</span></li>' in contact
+
+
+def test_심볼_원본이_있으면_웹용_사본을_만들어_Contact에_넣는다(tmp_path):
+    site = _sample_site(tmp_path)
+    (site / "assets" / "img").mkdir(parents=True, exist_ok=True)
+    Image.new("RGBA", (1600, 800), (0, 0, 0, 0)).save(site / "assets" / "img" / "faran_symbol.png")
+
+    result = _run(site)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (site / "media" / "_site" / "faran_symbol-880.webp").exists()
+    contact = (site / "contact.html").read_text(encoding="utf-8")
+    assert 'src="media/_site/faran_symbol-880.webp"' in contact
+    assert 'width="880" height="440"' in contact
+
+
+def test_심볼_원본이_없어도_빌드된다(tmp_path):
+    site = _sample_site(tmp_path)
+    symbol = site / "assets" / "img" / "faran_symbol.png"
+    if symbol.exists():
+        symbol.unlink()
+
+    result = _run(site)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "contact-symbol" not in (site / "contact.html").read_text(encoding="utf-8")
+
+
+def test_define_json의_contact_title과_contact_content가_Contact에_들어간다(tmp_path):
+    site = _sample_site(tmp_path)
+    _define(
+        site,
+        json.dumps(
+            {"contact-title": "다짐 한 줄", "contact-content": "첫 단락\n\n둘째 단락"},
+            ensure_ascii=False,
+        ),
+    )
+
+    result = _run(site)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    contact = (site / "contact.html").read_text(encoding="utf-8")
+    assert '<h2 class="contact-title">다짐 한 줄</h2>' in contact
+    assert "<p>첫 단락</p>\n<p>둘째 단락</p>" in contact
