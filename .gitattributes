@@ -38,3 +38,4 @@ upload/**/*.MOV   filter=lfs diff=lfs merge=lfs -text
 *.md   text eol=lf
 *.yml  text eol=lf
 *.txt  text eol=lf
+upload/**/*.jpg -filter -diff -merge -text
