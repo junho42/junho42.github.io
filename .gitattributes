@@ -39,3 +39,12 @@ upload/**/*.MOV   filter=lfs diff=lfs merge=lfs -text
 *.yml  text eol=lf
 *.txt  text eol=lf
 upload/**/*.jpg -filter -diff -merge -text
+upload/**/*.jpeg -filter -diff -merge -text
+upload/**/*.JPG -filter -diff -merge -text
+upload/**/*.JPEG -filter -diff -merge -text
+upload/**/*.png -filter -diff -merge -text
+upload/**/*.PNG -filter -diff -merge -text
+upload/**/*.webp -filter -diff -merge -text
+upload/**/*.avif -filter -diff -merge -text
+upload/**/*.tif -filter -diff -merge -text
+upload/**/*.tiff -filter -diff -merge -text
