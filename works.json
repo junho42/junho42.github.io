@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06T11:25:00.826204+00:00",
+  "generatedAt": "2026-10-06T11:31:37.722845+00:00",
   "works": [
     {
       "title": "Dewalt heritage",
@@ -64,8 +64,8 @@
       "body": ""
     },
     {
-      "title": "온 계정이 다 너로 가득한 - 홍대광",
-      "genre": "Test",
+      "title": "온 계절이 다 너로 가득한",
+      "genre": "live clip",
       "slug": "온 계정이 다 너로 가득한 - 홍대광",
       "url": "works/온 계정이 다 너로 가득한 - 홍대광/",
       "date": "2026-10-05T22:28:32+09:00",
@@ -79,7 +79,7 @@
         "kind": "youtube",
         "id": "we3nXj6aHr8",
         "embed": "https://www.youtube-nocookie.com/embed/we3nXj6aHr8",
-        "url": "https://www.youtube.com/watch?si=j9xhu92MA18Zm0rM&v=we3nXj6aHr8&feature=youtu.be"
+        "url": "https://www.youtube.com/watch?v=we3nXj6aHr8"
       },
       "images": [],
       "body": ""
