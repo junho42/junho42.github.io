@@ -1,62 +1,62 @@
 {
-  "generatedAt": "2026-10-06T11:35:35.119808+00:00",
+  "generatedAt": "2026-10-06T12:01:03.552780+00:00",
   "works": [
     {
-      "title": "Dewalt heritage",
-      "genre": "fasion film",
-      "slug": "무언가의 영상 - 작자모름",
-      "url": "works/무언가의 영상 - 작자모름/",
-      "date": "2026-10-05T22:28:32+09:00",
+      "title": "dewalt heritage1",
+      "genre": "",
+      "slug": "dewalt heritage1",
+      "url": "works/dewalt heritage1/",
+      "date": "2026-10-06T21:00:38+09:00",
       "order": null,
       "cover": {
-        "src": "media/무언가의 영상 - 작자모름/cover-600.webp",
+        "src": "media/dewalt heritage1/cover-600.webp",
         "w": 600,
         "h": 1067
       },
       "video": null,
       "images": [
         {
-          "src": "media/무언가의 영상 - 작자모름/01-KakaoTalk_20260927_183744808-1600.webp",
+          "src": "media/dewalt heritage1/01-KakaoTalk_20260927_183744808-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/02-KakaoTalk_20260927_183744808_01-1600.webp",
+          "src": "media/dewalt heritage1/02-KakaoTalk_20260927_183744808_01-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/03-KakaoTalk_20260927_183744808_02-1600.webp",
+          "src": "media/dewalt heritage1/03-KakaoTalk_20260927_183744808_02-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/04-KakaoTalk_20260927_183744808_03-1600.webp",
+          "src": "media/dewalt heritage1/04-KakaoTalk_20260927_183744808_03-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/05-KakaoTalk_20260927_183744808_04-1600.webp",
+          "src": "media/dewalt heritage1/05-KakaoTalk_20260927_183744808_04-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/06-KakaoTalk_20260927_183744808_05-1600.webp",
+          "src": "media/dewalt heritage1/06-KakaoTalk_20260927_183744808_05-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/07-KakaoTalk_20260927_183744808_06-1600.webp",
+          "src": "media/dewalt heritage1/07-KakaoTalk_20260927_183744808_06-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/08-KakaoTalk_20260927_183744808_07-1600.webp",
+          "src": "media/dewalt heritage1/08-KakaoTalk_20260927_183744808_07-1600.webp",
           "w": 1600,
           "h": 2844
         },
         {
-          "src": "media/무언가의 영상 - 작자모름/09-KakaoTalk_20260927_183744808_08-1600.webp",
+          "src": "media/dewalt heritage1/09-KakaoTalk_20260927_183744808_08-1600.webp",
           "w": 1600,
           "h": 2844
         }
@@ -66,12 +66,12 @@
     {
       "title": "온 계절이 다 너로 가득한",
       "genre": "live clip",
-      "slug": "온 계정이 다 너로 가득한 - 홍대광",
-      "url": "works/온 계정이 다 너로 가득한 - 홍대광/",
-      "date": "2026-10-05T22:28:32+09:00",
+      "slug": "온 계절이 다 너로 가득한 - 홍대광",
+      "url": "works/온 계절이 다 너로 가득한 - 홍대광/",
+      "date": "2026-10-06T21:00:38+09:00",
       "order": null,
       "cover": {
-        "src": "media/온 계정이 다 너로 가득한 - 홍대광/cover-600.webp",
+        "src": "media/온 계절이 다 너로 가득한 - 홍대광/cover-600.webp",
         "w": 600,
         "h": 338
       },
