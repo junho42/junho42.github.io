@@ -1,6 +1,68 @@
 {
-  "generatedAt": "2026-10-06T15:38:39.280756+00:00",
+  "generatedAt": "2026-10-06T15:42:44.764674+00:00",
   "works": [
+    {
+      "title": "오왠 - 그림자",
+      "genre": "live clip",
+      "slug": "오왠라이브클립",
+      "url": "works/오왠라이브클립/",
+      "date": "2026-10-07T00:42:01+09:00",
+      "order": null,
+      "cover": {
+        "src": "media/오왠라이브클립/cover-600.webp",
+        "w": 600,
+        "h": 338
+      },
+      "video": {
+        "kind": "youtube",
+        "id": "C6P6otG5C1w",
+        "embed": "https://www.youtube-nocookie.com/embed/C6P6otG5C1w",
+        "url": "https://www.youtube.com/watch?v=C6P6otG5C1w"
+      },
+      "images": [
+        {
+          "src": "media/오왠라이브클립/01-1.1.1_1.1.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/02-1.8.1_1.8.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/03-1.9.1_1.9.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/04-1.15.1_1.15.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/05-1.16.1_1.16.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/06-1.21.1_1.21.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/07-1.23.1_1.23.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "src": "media/오왠라이브클립/08-1.26.1_1.26.1-1600.webp",
+          "w": 1600,
+          "h": 900
+        }
+      ],
+      "body": ""
+    },
     {
       "title": "Easy check",
       "genre": "commercial",
@@ -178,7 +240,7 @@
       "body": ""
     },
     {
-      "title": "온 계절이 다 너로 가득한",
+      "title": "홍대광 - 온 계절이 다 너로 가득한",
       "genre": "live clip",
       "slug": "온 계절이 다 너로 가득한 - 홍대광",
       "url": "works/온 계절이 다 너로 가득한 - 홍대광/",
