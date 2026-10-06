@@ -1,6 +1,53 @@
 {
-  "generatedAt": "2026-10-06T13:04:17.234728+00:00",
+  "generatedAt": "2026-10-06T13:29:51.421282+00:00",
   "works": [
+    {
+      "title": "Dewalt heritage",
+      "genre": "fashion film",
+      "slug": "dewalt heritage3",
+      "url": "works/dewalt heritage3/",
+      "date": "2026-10-06T22:29:19+09:00",
+      "order": null,
+      "cover": {
+        "src": "media/dewalt heritage3/cover-600.webp",
+        "w": 600,
+        "h": 1067
+      },
+      "video": null,
+      "images": [
+        {
+          "src": "media/dewalt heritage3/01-1.1.1_1.1.1-1600.webp",
+          "w": 1512,
+          "h": 2688
+        },
+        {
+          "src": "media/dewalt heritage3/02-1.2.1_1.2.1-1600.webp",
+          "w": 1512,
+          "h": 2688
+        },
+        {
+          "src": "media/dewalt heritage3/03-1.3.1_1.3.1-1600.webp",
+          "w": 1512,
+          "h": 2688
+        },
+        {
+          "src": "media/dewalt heritage3/04-1.4.1_1.4.1-1600.webp",
+          "w": 1512,
+          "h": 2688
+        },
+        {
+          "src": "media/dewalt heritage3/05-1.5.1_1.5.1-1600.webp",
+          "w": 1512,
+          "h": 2688
+        },
+        {
+          "src": "media/dewalt heritage3/06-1.6.1_1.6.1-1600.webp",
+          "w": 1512,
+          "h": 2688
+        }
+      ],
+      "body": ""
+    },
     {
       "title": "Dewalt heritage",
       "genre": "fashion film",
@@ -8,59 +55,9 @@
       "url": "works/dewalt heritage1/",
       "date": "2026-10-06T21:01:39+09:00",
       "order": null,
-      "cover": {
-        "src": "media/dewalt heritage1/cover-600.webp",
-        "w": 600,
-        "h": 1067
-      },
+      "cover": null,
       "video": null,
-      "images": [
-        {
-          "src": "media/dewalt heritage1/01-KakaoTalk_20260927_183744808-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/02-KakaoTalk_20260927_183744808_01-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/03-KakaoTalk_20260927_183744808_02-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/04-KakaoTalk_20260927_183744808_03-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/05-KakaoTalk_20260927_183744808_04-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/06-KakaoTalk_20260927_183744808_05-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/07-KakaoTalk_20260927_183744808_06-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/08-KakaoTalk_20260927_183744808_07-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage1/09-KakaoTalk_20260927_183744808_08-1600.webp",
-          "w": 1600,
-          "h": 2844
-        }
-      ],
+      "images": [],
       "body": ""
     },
     {
@@ -70,54 +67,9 @@
       "url": "works/dewalt heritage2/",
       "date": "2026-10-06T21:01:39+09:00",
       "order": null,
-      "cover": {
-        "src": "media/dewalt heritage2/cover-600.webp",
-        "w": 600,
-        "h": 1067
-      },
+      "cover": null,
       "video": null,
-      "images": [
-        {
-          "src": "media/dewalt heritage2/01-1.1.1_1.1.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/02-1.2.1_1.2.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/03-1.6.1_1.6.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/04-1.11.1_1.11.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/05-1.14.1_1.14.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/06-1.19.1_1.19.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/07-1.20.1_1.20.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage2/08-1.22.1_1.22.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        }
-      ],
+      "images": [],
       "body": ""
     },
     {
