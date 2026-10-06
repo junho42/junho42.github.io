@@ -1,53 +1,6 @@
 {
-  "generatedAt": "2026-10-06T12:59:33.110679+00:00",
+  "generatedAt": "2026-10-06T13:04:17.234728+00:00",
   "works": [
-    {
-      "title": "Dewalt heritage",
-      "genre": "fashion film",
-      "slug": "dewalt heritage3",
-      "url": "works/dewalt heritage3/",
-      "date": "2026-10-06T21:58:02+09:00",
-      "order": null,
-      "cover": {
-        "src": "media/dewalt heritage3/cover-600.webp",
-        "w": 600,
-        "h": 1067
-      },
-      "video": null,
-      "images": [
-        {
-          "src": "media/dewalt heritage3/01-1.1.1_1.1.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage3/02-1.2.1_1.2.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage3/03-1.3.1_1.3.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage3/04-1.4.1_1.4.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage3/05-1.5.1_1.5.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        },
-        {
-          "src": "media/dewalt heritage3/06-1.6.1_1.6.1-1600.webp",
-          "w": 1600,
-          "h": 2844
-        }
-      ],
-      "body": ""
-    },
     {
       "title": "Dewalt heritage",
       "genre": "fashion film",
