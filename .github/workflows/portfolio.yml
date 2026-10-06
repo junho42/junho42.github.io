@@ -98,9 +98,9 @@ jobs:
           print(f"기존 LFS 이미지 {restored}개 복원", flush=True)
           PY
 
-          - name: 빌드
+      - name: 빌드
         run: python tools/build.py
-        
+
       - name: 결과 커밋
         run: |
           git config user.name  "github-actions[bot]"
