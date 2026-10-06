@@ -44,32 +44,60 @@ jobs:
       - name: 테스트
         run: python -m pytest tools/tests -q
 
-      - name: 이미지 파일 진단
+      - name: 기존 LFS 이미지 복원
+        env:
+          GIT_LFS_SKIP_SMUDGE: "0"
         run: |
           python - <<'PY'
+          import hashlib
+          import subprocess
           from pathlib import Path
-          from PIL import Image
 
-          for folder in ("dewalt heritage1", "dewalt heritage2", "dewalt heritage3"):
-              path = Path("upload") / folder / "1.1.1_1.1.1.jpg"
-              print(f"\n파일: {path}", flush=True)
-              if not path.exists():
-                  print("파일 없음", flush=True)
+          extensions = {
+              ".jpg", ".jpeg", ".png", ".webp",
+              ".avif", ".tif", ".tiff"
+          }
+          restored = 0
+
+          for path in sorted(Path("upload").rglob("*")):
+              if not path.is_file() or path.suffix.lower() not in extensions:
+                  continue
+              if path.stat().st_size > 1024:
                   continue
 
-              with path.open("rb") as f:
-                  header = f.read(160)
-              print(f"크기: {path.stat().st_size} bytes", flush=True)
-              print(f"파일 시작 부분: {header!r}", flush=True)
+              pointer = path.read_bytes()
+              if not pointer.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
+                  continue
 
-              try:
-                  with Image.open(path) as image:
-                      image.load()
-                      print(f"정상: {image.format}, {image.size}", flush=True)
-              except Exception as exc:
-                  print(f"오류: {type(exc).__name__}: {exc}", flush=True)
+              fields = dict(
+                  line.split(" ", 1)
+                  for line in pointer.decode("utf-8").splitlines()
+              )
+              result = subprocess.run(
+                  [
+                      "git", "-c", "lfs.fetchinclude=",
+                      "-c", "lfs.fetchexclude=",
+                      "lfs", "smudge", str(path)
+                  ],
+                  input=pointer,
+                  stdout=subprocess.PIPE,
+                  check=True,
+              )
+              data = result.stdout
+              expected_hash = fields["oid"].removeprefix("sha256:")
+              if (
+                  len(data) != int(fields["size"])
+                  or hashlib.sha256(data).hexdigest() != expected_hash
+              ):
+                  raise RuntimeError(f"실제 이미지 다운로드 검증 실패: {path}")
+
+              path.write_bytes(data)
+              restored += 1
+              print(f"복원 완료: {path} ({len(data)} bytes)", flush=True)
+
+          print(f"기존 LFS 이미지 {restored}개 복원", flush=True)
           PY
-
+          
       - name: 결과 커밋
         run: |
           git config user.name  "github-actions[bot]"
