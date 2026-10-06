@@ -62,8 +62,11 @@ def _build_work(
             else:
                 size = image_size(cover_dest)
             cover_entry = {"src": _relative(site_root, cover_dest), "w": size[0], "h": size[1]}
-        except OSError:
-            warnings.append(f"{work.title}/{work.cover.name}: 이미지를 열 수 없어 커버에서 제외했습니다")
+        except OSError as exc:
+            warnings.append(
+                f"{work.slug}/{work.cover.name}: 커버 생성 실패 "
+                f"({type(exc).__name__}: {exc})"
+            )
     elif work.video and work.video.get("kind") == "youtube":
         cover_dest = out_dir / COVER_FILENAME
         # 이미 받아둔 썸네일이 있으면 다시 내려받지 않는다. 무조건 다시 받으면
@@ -91,8 +94,11 @@ def _build_work(
                 size = make_gallery(source, dest)
             else:
                 size = image_size(dest)
-        except OSError:
-            warnings.append(f"{work.title}/{source.name}: 이미지를 열 수 없어 건너뜁니다")
+        except OSError as exc:
+            warnings.append(
+                f"{work.slug}/{source.name}: 이미지 생성 실패 "
+                f"({type(exc).__name__}: {exc})"
+            )
             continue
         image_entries.append({"src": _relative(site_root, dest), "w": size[0], "h": size[1]})
 
