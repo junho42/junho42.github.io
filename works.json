@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-06T12:01:03.552780+00:00",
+  "generatedAt": "2026-10-06T12:01:59.054122+00:00",
   "works": [
     {
-      "title": "dewalt heritage1",
-      "genre": "",
+      "title": "Dewalt heritage",
+      "genre": "fasion film",
       "slug": "dewalt heritage1",
       "url": "works/dewalt heritage1/",
-      "date": "2026-10-06T21:00:38+09:00",
+      "date": "2026-10-06T21:01:39+09:00",
       "order": null,
       "cover": {
         "src": "media/dewalt heritage1/cover-600.webp",
@@ -57,6 +57,63 @@
         },
         {
           "src": "media/dewalt heritage1/09-KakaoTalk_20260927_183744808_08-1600.webp",
+          "w": 1600,
+          "h": 2844
+        }
+      ],
+      "body": ""
+    },
+    {
+      "title": "dewalt heritage2",
+      "genre": "",
+      "slug": "dewalt heritage2",
+      "url": "works/dewalt heritage2/",
+      "date": "2026-10-06T21:01:39+09:00",
+      "order": null,
+      "cover": {
+        "src": "media/dewalt heritage2/cover-600.webp",
+        "w": 600,
+        "h": 1067
+      },
+      "video": null,
+      "images": [
+        {
+          "src": "media/dewalt heritage2/01-1.1.1_1.1.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/02-1.2.1_1.2.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/03-1.6.1_1.6.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/04-1.11.1_1.11.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/05-1.14.1_1.14.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/06-1.19.1_1.19.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/07-1.20.1_1.20.1-1600.webp",
+          "w": 1600,
+          "h": 2844
+        },
+        {
+          "src": "media/dewalt heritage2/08-1.22.1_1.22.1-1600.webp",
           "w": 1600,
           "h": 2844
         }
