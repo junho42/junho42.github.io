@@ -532,7 +532,7 @@ a { color: inherit; text-decoration: none; }
 }
 .contact-label {
   display: inline-block;
-  min-width: 6.5em;
+  min-width: 7.5em;
   margin-right: 12px;
   font-size: .75rem;
   letter-spacing: .12em;
@@ -675,6 +675,49 @@ body.lb-open .to-top { display: none; }
 .lightbox .lb-next { right: 12px; }
 .lightbox .lb-close { top: 12px; right: 12px; transform: none; }
 body.lb-open { overflow: hidden; }
+
+/* 폰(600px 미만) — 헤더는 한 줄을 지키도록 글자·여백을 줄이고,
+   Contact 본문도 한 단계 작은 크기로 맞춘다. */
+@media (max-width: 599px) {
+  .masthead {
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 20px 20px 48px;
+  }
+  .brand { font-size: 20px; }
+  .nav {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .nav a {
+    font-size: 15px;
+    letter-spacing: -0.5px;
+    padding: 5px 8px;
+    border-width: 2px;
+  }
+
+  .contact-symbol img { width: min(45%, 160px); }
+  .contact-body {
+    padding: 32px 20px 56px;
+    font-size: .875rem;
+  }
+  .contact-title {
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+  }
+  .contact-list {
+    margin-top: 28px;
+    gap: 8px;
+    font-size: .8125rem;
+  }
+  /* 가장 긴 이름표(INSTAGRAM)가 들어가는 폭. 짧으면 그 줄 값만 밀려 정렬이 깨진다. */
+  .contact-label {
+    min-width: 7.5em;
+    margin-right: 8px;
+    font-size: .6875rem;
+  }
+  .contact-map { margin-top: 24px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
